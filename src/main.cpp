@@ -4,47 +4,9 @@
 #include "InputKeyboard.h"
 #include "Shader.h"
 #include "Grid.h"
+#include "Timer1.h"
 
 #include <iostream>
-
-
-// ============================================================
-// SHADERS
-// ============================================================
-
-const char* GRID_VERTEX_SHADER = R"(
-#version 330 core
-
-layout (location = 0) in vec3 aPosition;
-
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-
-void main()
-{
-    gl_Position =
-        projection *
-        view *
-        model *
-        vec4(aPosition, 1.0);
-}
-)";
-
-
-const char* GRID_FRAGMENT_SHADER = R"(
-#version 330 core
-
-out vec4 FragColor;
-
-uniform vec3 color;
-
-void main()
-{
-    FragColor =
-        vec4(color, 1.0);
-}
-)";
 
 
 // ============================================================
@@ -109,8 +71,8 @@ int main()
     // ========================================================
 
     Shader gridShader(
-        GRID_VERTEX_SHADER,
-        GRID_FRAGMENT_SHADER
+        "shaders/grid.vert",
+        "shaders/grid.frag"
     );
 
 
@@ -125,10 +87,10 @@ int main()
 
 
     // ========================================================
-    // 6. TIME
+    // 6. TIMER
     // ========================================================
 
-    float lastFrame = 0.0f;
+    Timer1 timer;
 
 
     // ========================================================
@@ -141,19 +103,8 @@ int main()
         // TIME
         // ====================================================
 
-        float currentFrame =
-            static_cast<float>(
-                glfwGetTime()
-            );
-
-
         float deltaTime =
-            currentFrame -
-            lastFrame;
-
-
-        lastFrame =
-            currentFrame;
+            timer.getDeltaTime();
 
 
         // ====================================================
@@ -198,10 +149,6 @@ int main()
         window.clear();
 
 
-        // ----------------------------------------------------
-        // Camera matrices
-        // ----------------------------------------------------
-
         float aspectRatio =
             window.getAspectRatio();
 
@@ -220,9 +167,9 @@ int main()
             );
 
 
-        // ----------------------------------------------------
-        // Grid shader
-        // ----------------------------------------------------
+        // ====================================================
+        // GRID
+        // ====================================================
 
         gridShader.bind();
 
@@ -254,10 +201,6 @@ int main()
             )
         );
 
-
-        // ----------------------------------------------------
-        // Grid
-        // ----------------------------------------------------
 
         grid.render(
             gridShader

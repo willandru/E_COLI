@@ -4,7 +4,9 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include <fstream>
 #include <iostream>
+#include <sstream>
 
 
 // ============================================================
@@ -12,11 +14,49 @@
 // ============================================================
 
 Shader::Shader(
-    const char* vertexSource,
-    const char* fragmentSource
+    const char* vertexPath,
+    const char* fragmentPath
 )
     : m_program(0)
 {
+    // ========================================================
+    // Cargar archivos
+    // ========================================================
+
+    std::string vertexSource =
+        loadFile(vertexPath);
+
+
+    std::string fragmentSource =
+        loadFile(fragmentPath);
+
+
+    // ========================================================
+    // Verificar archivos
+    // ========================================================
+
+    if (vertexSource.empty())
+    {
+        std::cerr
+            << "Error: no se pudo cargar vertex shader:\n"
+            << vertexPath
+            << '\n';
+
+        return;
+    }
+
+
+    if (fragmentSource.empty())
+    {
+        std::cerr
+            << "Error: no se pudo cargar fragment shader:\n"
+            << fragmentPath
+            << '\n';
+
+        return;
+    }
+
+
     // ========================================================
     // Compilar vertex shader
     // ========================================================
@@ -24,8 +64,14 @@ Shader::Shader(
     unsigned int vertexShader =
         compileShader(
             GL_VERTEX_SHADER,
-            vertexSource
+            vertexSource.c_str()
         );
+
+
+    if (vertexShader == 0)
+    {
+        return;
+    }
 
 
     // ========================================================
@@ -35,8 +81,16 @@ Shader::Shader(
     unsigned int fragmentShader =
         compileShader(
             GL_FRAGMENT_SHADER,
-            fragmentSource
+            fragmentSource.c_str()
         );
+
+
+    if (fragmentShader == 0)
+    {
+        glDeleteShader(vertexShader);
+
+        return;
+    }
 
 
     // ========================================================
@@ -94,6 +148,14 @@ Shader::Shader(
             << "Error enlazando Shader Program:\n"
             << infoLog
             << '\n';
+
+
+        glDeleteProgram(
+            m_program
+        );
+
+
+        m_program = 0;
     }
 
 
@@ -136,6 +198,44 @@ void Shader::bind() const
     glUseProgram(
         m_program
     );
+}
+
+
+// ============================================================
+// LOAD FILE
+// ============================================================
+
+std::string Shader::loadFile(
+    const char* path
+)
+{
+    std::ifstream file(
+        path,
+        std::ios::in
+    );
+
+
+    if (!file.is_open())
+    {
+        std::cerr
+            << "Error: no se pudo abrir shader:\n"
+            << path
+            << '\n';
+
+        return "";
+    }
+
+
+    std::stringstream buffer;
+
+
+    buffer << file.rdbuf();
+
+
+    file.close();
+
+
+    return buffer.str();
 }
 
 
@@ -205,6 +305,14 @@ unsigned int Shader::compileShader(
             << "Error compilando shader:\n"
             << infoLog
             << '\n';
+
+
+        glDeleteShader(
+            shader
+        );
+
+
+        return 0;
     }
 
 

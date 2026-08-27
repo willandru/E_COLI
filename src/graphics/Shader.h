@@ -1,6 +1,8 @@
 #pragma once
 
 
+#include <string>
+
 #include <glm/glm.hpp>
 
 
@@ -8,10 +10,15 @@ class Shader
 {
 public:
 
+    // ========================================================
+    // Constructor
+    // ========================================================
+
     Shader(
-        const char* vertexSource,
-        const char* fragmentSource
+        const char* vertexPath,
+        const char* fragmentPath
     );
+
 
     ~Shader();
 
@@ -42,6 +49,15 @@ public:
 private:
 
     unsigned int m_program;
+
+
+    // ========================================================
+    // Leer archivo
+    // ========================================================
+
+    std::string loadFile(
+        const char* path
+    );
 
 
     // ========================================================

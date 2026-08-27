@@ -15,6 +15,10 @@ Grid::Grid(
       m_VBO(0),
       m_vertexCount(0)
 {
+    // ========================================================
+    // Crear vértices
+    // ========================================================
+
     std::vector<float> vertices =
         createVertices(
             size,
@@ -29,7 +33,7 @@ Grid::Grid(
 
 
     // ========================================================
-    // VAO
+    // Crear VAO
     // ========================================================
 
     glGenVertexArrays(
@@ -39,7 +43,7 @@ Grid::Grid(
 
 
     // ========================================================
-    // VBO
+    // Crear VBO
     // ========================================================
 
     glGenBuffers(
@@ -48,16 +52,28 @@ Grid::Grid(
     );
 
 
+    // ========================================================
+    // Bind VAO
+    // ========================================================
+
     glBindVertexArray(
         m_VAO
     );
 
+
+    // ========================================================
+    // Bind VBO
+    // ========================================================
 
     glBindBuffer(
         GL_ARRAY_BUFFER,
         m_VBO
     );
 
+
+    // ========================================================
+    // Copiar vértices a GPU
+    // ========================================================
 
     glBufferData(
         GL_ARRAY_BUFFER,
@@ -86,11 +102,19 @@ Grid::Grid(
     );
 
 
+    // ========================================================
+    // Unbind VBO
+    // ========================================================
+
     glBindBuffer(
         GL_ARRAY_BUFFER,
         0
     );
 
+
+    // ========================================================
+    // Unbind VAO
+    // ========================================================
 
     glBindVertexArray(
         0
@@ -109,6 +133,7 @@ Grid::~Grid()
         &m_VAO
     );
 
+
     glDeleteBuffers(
         1,
         &m_VBO
@@ -123,10 +148,14 @@ Grid::~Grid()
 std::vector<float> Grid::createVertices(
     float size,
     int divisions
-)
+) const
 {
     std::vector<float> vertices;
 
+
+    // ========================================================
+    // Dimensiones
+    // ========================================================
 
     float half =
         size / 2.0f;
@@ -134,7 +163,9 @@ std::vector<float> Grid::createVertices(
 
     float step =
         size /
-        static_cast<float>(divisions);
+        static_cast<float>(
+            divisions
+        );
 
 
     // ========================================================
@@ -144,17 +175,42 @@ std::vector<float> Grid::createVertices(
     for (int i = 0; i <= divisions; ++i)
     {
         float z =
-            -half + i * step;
+            -half +
+            i * step;
 
 
-        vertices.push_back(-half);
-        vertices.push_back(0.0f);
-        vertices.push_back(z);
+        // ----------------------------------------------------
+        // Punto inicial
+        // ----------------------------------------------------
+
+        vertices.push_back(
+            -half
+        );
+
+        vertices.push_back(
+            0.0f
+        );
+
+        vertices.push_back(
+            z
+        );
 
 
-        vertices.push_back(half);
-        vertices.push_back(0.0f);
-        vertices.push_back(z);
+        // ----------------------------------------------------
+        // Punto final
+        // ----------------------------------------------------
+
+        vertices.push_back(
+            half
+        );
+
+        vertices.push_back(
+            0.0f
+        );
+
+        vertices.push_back(
+            z
+        );
     }
 
 
@@ -165,17 +221,42 @@ std::vector<float> Grid::createVertices(
     for (int i = 0; i <= divisions; ++i)
     {
         float x =
-            -half + i * step;
+            -half +
+            i * step;
 
 
-        vertices.push_back(x);
-        vertices.push_back(0.0f);
-        vertices.push_back(-half);
+        // ----------------------------------------------------
+        // Punto inicial
+        // ----------------------------------------------------
+
+        vertices.push_back(
+            x
+        );
+
+        vertices.push_back(
+            0.0f
+        );
+
+        vertices.push_back(
+            -half
+        );
 
 
-        vertices.push_back(x);
-        vertices.push_back(0.0f);
-        vertices.push_back(half);
+        // ----------------------------------------------------
+        // Punto final
+        // ----------------------------------------------------
+
+        vertices.push_back(
+            x
+        );
+
+        vertices.push_back(
+            0.0f
+        );
+
+        vertices.push_back(
+            half
+        );
     }
 
 
@@ -191,13 +272,25 @@ void Grid::render(
     Shader& shader
 ) const
 {
+    // ========================================================
+    // Shader
+    // ========================================================
+
     shader.bind();
 
+
+    // ========================================================
+    // VAO
+    // ========================================================
 
     glBindVertexArray(
         m_VAO
     );
 
+
+    // ========================================================
+    // Draw
+    // ========================================================
 
     glDrawArrays(
         GL_LINES,
@@ -205,6 +298,10 @@ void Grid::render(
         m_vertexCount
     );
 
+
+    // ========================================================
+    // Unbind
+    // ========================================================
 
     glBindVertexArray(
         0

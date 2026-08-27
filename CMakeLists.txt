@@ -99,3 +99,24 @@ target_link_libraries(E_COLI PRIVATE
 
     glm
 )
+
+
+# ============================================================
+# SHADERS
+# ============================================================
+
+add_custom_command(
+    TARGET E_COLI
+    POST_BUILD
+
+    COMMAND
+        ${CMAKE_COMMAND}
+        -E copy_directory
+
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/shaders"
+
+        "${CMAKE_BINARY_DIR}/shaders"
+
+    COMMENT
+        "Copiando shaders..."
+)
