@@ -2,9 +2,9 @@
 #include "Camera.h"
 #include "InputMouse.h"
 #include "InputKeyboard.h"
-#include "Shader.h"
-#include "Grid.h"
 #include "Timer1.h"
+#include "Grid.h"
+#include "GridRenderer.h"
 
 #include <iostream>
 
@@ -67,13 +67,10 @@ int main()
 
 
     // ========================================================
-    // 4. SHADER
+    // 4. TIME
     // ========================================================
 
-    Shader gridShader(
-        "shaders/grid.vert",
-        "shaders/grid.frag"
-    );
+    Timer1 timer;
 
 
     // ========================================================
@@ -87,10 +84,10 @@ int main()
 
 
     // ========================================================
-    // 6. TIMER
+    // 6. RENDERERS
     // ========================================================
 
-    Timer1 timer;
+    GridRenderer gridRenderer;
 
 
     // ========================================================
@@ -102,6 +99,9 @@ int main()
         // ====================================================
         // TIME
         // ====================================================
+
+        timer.update();
+
 
         float deltaTime =
             timer.getDeltaTime();
@@ -130,15 +130,12 @@ int main()
 
 
         // ====================================================
-        // ESC
+        // ESC - EXIT
         // ====================================================
 
-        if (keyboard.isPressed(GLFW_KEY_ESCAPE))
+        if (keyboard.shouldClose())
         {
-            glfwSetWindowShouldClose(
-                nativeWindow,
-                true
-            );
+            break;
         }
 
 
@@ -149,61 +146,10 @@ int main()
         window.clear();
 
 
-        float aspectRatio =
-            window.getAspectRatio();
-
-
-        glm::mat4 model =
-            glm::mat4(1.0f);
-
-
-        glm::mat4 view =
-            camera.getViewMatrix();
-
-
-        glm::mat4 projection =
-            camera.getProjectionMatrix(
-                aspectRatio
-            );
-
-
-        // ====================================================
-        // GRID
-        // ====================================================
-
-        gridShader.bind();
-
-
-        gridShader.setMat4(
-            "model",
-            model
-        );
-
-
-        gridShader.setMat4(
-            "view",
-            view
-        );
-
-
-        gridShader.setMat4(
-            "projection",
-            projection
-        );
-
-
-        gridShader.setVec3(
-            "color",
-            glm::vec3(
-                0.25f,
-                0.30f,
-                0.35f
-            )
-        );
-
-
-        grid.render(
-            gridShader
+        gridRenderer.render(
+            grid,
+            camera,
+            window
         );
 
 

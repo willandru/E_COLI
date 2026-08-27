@@ -19,9 +19,6 @@ InputKeyboard::InputKeyboard(
 
 void InputKeyboard::update()
 {
-    // Actualmente no necesitamos
-    // procesar eventos aquí.
-
     // GLFW procesa los eventos mediante
     // glfwPollEvents().
 }
@@ -48,7 +45,7 @@ bool InputKeyboard::isPressed(
 
 bool InputKeyboard::shouldClose() const
 {
-    return glfwWindowShouldClose(
-        m_window
+    return isPressed(
+        GLFW_KEY_ESCAPE
     );
 }
