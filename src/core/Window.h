@@ -46,6 +46,8 @@ public:
 
     int getHeight() const;
 
+    float getAspectRatio() const;
+
 
 private:
 

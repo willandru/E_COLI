@@ -5,6 +5,10 @@
 #include <iostream>
 
 
+// ============================================================
+// CONSTRUCTOR
+// ============================================================
+
 Window::Window(
     int width,
     int height,
@@ -105,7 +109,9 @@ Window::Window(
     // Crear contexto OpenGL
     // ========================================================
 
-    glfwMakeContextCurrent(m_window);
+    glfwMakeContextCurrent(
+        m_window
+    );
 
 
     // ========================================================
@@ -114,12 +120,15 @@ Window::Window(
 
     if (!gladLoadGLLoader(
         reinterpret_cast<GLADloadproc>(
-            glfwGetProcAddress)))
+            glfwGetProcAddress
+        )))
     {
         std::cerr
             << "Error: no se pudo inicializar GLAD.\n";
 
-        glfwDestroyWindow(m_window);
+        glfwDestroyWindow(
+            m_window
+        );
 
         glfwTerminate();
 
@@ -145,7 +154,9 @@ Window::Window(
     // Depth testing
     // ========================================================
 
-    glEnable(GL_DEPTH_TEST);
+    glEnable(
+        GL_DEPTH_TEST
+    );
 
 
     // ========================================================
@@ -164,7 +175,9 @@ Window::~Window()
 {
     if (m_window)
     {
-        glfwDestroyWindow(m_window);
+        glfwDestroyWindow(
+            m_window
+        );
     }
 
     glfwTerminate();
@@ -177,7 +190,9 @@ Window::~Window()
 
 bool Window::shouldClose() const
 {
-    return glfwWindowShouldClose(m_window);
+    return glfwWindowShouldClose(
+        m_window
+    );
 }
 
 
@@ -194,6 +209,7 @@ void Window::clear()
         1.0f
     );
 
+
     glClear(
         GL_COLOR_BUFFER_BIT |
         GL_DEPTH_BUFFER_BIT
@@ -202,7 +218,7 @@ void Window::clear()
 
 
 // ============================================================
-// PRESENT
+// PROCESS EVENTS
 // ============================================================
 
 void Window::processEvents()
@@ -211,10 +227,17 @@ void Window::processEvents()
 }
 
 
+// ============================================================
+// PRESENT
+// ============================================================
+
 void Window::present()
 {
-    glfwSwapBuffers(m_window);
+    glfwSwapBuffers(
+        m_window
+    );
 }
+
 
 // ============================================================
 // NATIVE WINDOW
@@ -243,4 +266,15 @@ int Window::getWidth() const
 int Window::getHeight() const
 {
     return m_height;
+}
+
+
+// ============================================================
+// ASPECT RATIO
+// ============================================================
+
+float Window::getAspectRatio() const
+{
+    return static_cast<float>(m_width) /
+           static_cast<float>(m_height);
 }

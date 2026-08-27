@@ -18,7 +18,7 @@ Shader::Shader(
     : m_program(0)
 {
     // ========================================================
-    // Compilar shaders
+    // Compilar vertex shader
     // ========================================================
 
     unsigned int vertexShader =
@@ -27,6 +27,10 @@ Shader::Shader(
             vertexSource
         );
 
+
+    // ========================================================
+    // Compilar fragment shader
+    // ========================================================
 
     unsigned int fragmentShader =
         compileShader(
@@ -85,6 +89,7 @@ Shader::Shader(
             infoLog
         );
 
+
         std::cerr
             << "Error enlazando Shader Program:\n"
             << infoLog
@@ -99,6 +104,7 @@ Shader::Shader(
     glDeleteShader(
         vertexShader
     );
+
 
     glDeleteShader(
         fragmentShader
@@ -143,8 +149,14 @@ unsigned int Shader::compileShader(
 )
 {
     unsigned int shader =
-        glCreateShader(type);
+        glCreateShader(
+            type
+        );
 
+
+    // ========================================================
+    // Fuente
+    // ========================================================
 
     glShaderSource(
         shader,
@@ -154,10 +166,18 @@ unsigned int Shader::compileShader(
     );
 
 
+    // ========================================================
+    // Compilación
+    // ========================================================
+
     glCompileShader(
         shader
     );
 
+
+    // ========================================================
+    // Comprobar compilación
+    // ========================================================
 
     int success;
 
@@ -179,6 +199,7 @@ unsigned int Shader::compileShader(
             nullptr,
             infoLog
         );
+
 
         std::cerr
             << "Error compilando shader:\n"

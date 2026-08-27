@@ -1,11 +1,12 @@
-
 #include "Window.h"
 #include "Camera.h"
 #include "InputMouse.h"
 #include "InputKeyboard.h"
 #include "Shader.h"
 #include "Grid.h"
+
 #include <iostream>
+
 
 // ============================================================
 // SHADERS
@@ -97,6 +98,7 @@ int main()
         nativeWindow
     );
 
+
     InputKeyboard keyboard(
         nativeWindow
     );
@@ -166,48 +168,14 @@ int main()
 
 
         // ====================================================
-        // CAMERA MOVEMENT
+        // CAMERA
         // ====================================================
 
-        float speed =
-            5.0f * deltaTime;
-
-
-        if (keyboard.isPressed(GLFW_KEY_W))
-        {
-            camera.moveForward(speed);
-        }
-
-
-        if (keyboard.isPressed(GLFW_KEY_S))
-        {
-            camera.moveBackward(speed);
-        }
-
-
-        if (keyboard.isPressed(GLFW_KEY_A))
-        {
-            camera.moveLeft(speed);
-        }
-
-
-        if (keyboard.isPressed(GLFW_KEY_D))
-        {
-            camera.moveRight(speed);
-        }
-
-
-        if (keyboard.isPressed(GLFW_KEY_SPACE))
-        {
-            camera.moveUp(speed);
-        }
-
-
-        if (keyboard.isPressed(
-            GLFW_KEY_LEFT_CONTROL))
-        {
-            camera.moveDown(speed);
-        }
+        camera.update(
+            keyboard,
+            mouse,
+            deltaTime
+        );
 
 
         // ====================================================
@@ -224,31 +192,6 @@ int main()
 
 
         // ====================================================
-        // CAMERA ROTATION
-        // ====================================================
-
-        if (mouse.isRotating())
-        {
-            camera.rotate(
-                mouse.getDeltaX(),
-                mouse.getDeltaY()
-            );
-        }
-
-
-        // ====================================================
-        // CAMERA ZOOM
-        // ====================================================
-
-        if (mouse.getScrollDelta() != 0.0f)
-        {
-            camera.zoom(
-                mouse.getScrollDelta() * 3.0f
-            );
-        }
-
-
-        // ====================================================
         // RENDER
         // ====================================================
 
@@ -259,16 +202,8 @@ int main()
         // Camera matrices
         // ----------------------------------------------------
 
-        int width =
-            window.getWidth();
-
-        int height =
-            window.getHeight();
-
-
         float aspectRatio =
-            static_cast<float>(width) /
-            static_cast<float>(height);
+            window.getAspectRatio();
 
 
         glm::mat4 model =

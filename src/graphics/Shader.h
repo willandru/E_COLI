@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 
 #include <glm/glm.hpp>
 
@@ -45,11 +44,19 @@ private:
     unsigned int m_program;
 
 
+    // ========================================================
+    // Compilación
+    // ========================================================
+
     unsigned int compileShader(
         unsigned int type,
         const char* source
     );
 
+
+    // ========================================================
+    // Uniforms
+    // ========================================================
 
     int getUniformLocation(
         const char* name

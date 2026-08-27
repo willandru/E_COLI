@@ -3,12 +3,27 @@
 #include <glm/glm.hpp>
 
 
+class InputMouse;
+class InputKeyboard;
+
+
 class Camera
 {
 public:
 
     Camera(
         const glm::vec3& position = glm::vec3(0.0f, 3.0f, 8.0f)
+    );
+
+
+    // ========================================================
+    // Actualización
+    // ========================================================
+
+    void update(
+        const InputKeyboard& keyboard,
+        const InputMouse& mouse,
+        float deltaTime
     );
 
 
@@ -91,7 +106,6 @@ private:
     float m_pitch;
 
     float m_fov;
-
 
     float m_mouseSensitivity;
 };

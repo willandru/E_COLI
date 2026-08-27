@@ -1,5 +1,8 @@
 #include "Camera.h"
 
+#include "InputMouse.h"
+#include "InputKeyboard.h"
+
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <cmath>
@@ -23,6 +26,87 @@ Camera::Camera(
       m_mouseSensitivity(0.1f)
 {
     updateDirection();
+}
+
+
+// ============================================================
+// UPDATE
+// ============================================================
+
+void Camera::update(
+    const InputKeyboard& keyboard,
+    const InputMouse& mouse,
+    float deltaTime
+)
+{
+    // ========================================================
+    // MOVIMIENTO
+    // ========================================================
+
+    float speed =
+        5.0f *
+        deltaTime;
+
+
+    if (keyboard.isPressed(GLFW_KEY_W))
+    {
+        moveForward(speed);
+    }
+
+
+    if (keyboard.isPressed(GLFW_KEY_S))
+    {
+        moveBackward(speed);
+    }
+
+
+    if (keyboard.isPressed(GLFW_KEY_A))
+    {
+        moveLeft(speed);
+    }
+
+
+    if (keyboard.isPressed(GLFW_KEY_D))
+    {
+        moveRight(speed);
+    }
+
+
+    if (keyboard.isPressed(GLFW_KEY_SPACE))
+    {
+        moveUp(speed);
+    }
+
+
+    if (keyboard.isPressed(GLFW_KEY_LEFT_CONTROL))
+    {
+        moveDown(speed);
+    }
+
+
+    // ========================================================
+    // ROTACIÓN
+    // ========================================================
+
+    if (mouse.isRotating())
+    {
+        rotate(
+            mouse.getDeltaX(),
+            mouse.getDeltaY()
+        );
+    }
+
+
+    // ========================================================
+    // ZOOM
+    // ========================================================
+
+    if (mouse.getScrollDelta() != 0.0f)
+    {
+        zoom(
+            mouse.getScrollDelta() * 3.0f
+        );
+    }
 }
 
 
@@ -88,12 +172,15 @@ void Camera::rotate(
     m_pitch += yOffset;
 
 
+    // ========================================================
     // Limitar rotación vertical
+    // ========================================================
 
     if (m_pitch > 89.0f)
     {
         m_pitch = 89.0f;
     }
+
 
     if (m_pitch < -89.0f)
     {
@@ -135,12 +222,15 @@ void Camera::updateDirection()
 {
     glm::vec3 direction;
 
+
     direction.x =
         std::cos(glm::radians(m_yaw)) *
         std::cos(glm::radians(m_pitch));
 
+
     direction.y =
         std::sin(glm::radians(m_pitch));
+
 
     direction.z =
         std::sin(glm::radians(m_yaw)) *
