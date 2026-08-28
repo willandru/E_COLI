@@ -45,6 +45,12 @@ public:
         const glm::vec3& value
     ) const;
 
+    void setFloat(
+        const char* name,
+        float value
+    ) const;
+
+
 
 private:
 

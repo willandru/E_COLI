@@ -5,6 +5,8 @@
 #include "Timer1.h"
 #include "Grid.h"
 #include "GridRenderer.h"
+#include "DNA.h"
+#include "DNARenderer.h"
 
 #include <iostream>
 
@@ -84,14 +86,37 @@ int main()
 
 
     // ========================================================
-    // 6. RENDERERS
+    // 6. DNA
+    // ========================================================
+
+    DNA dna(
+        "../data/ncbi_dataset/ncbi_dataset/data/GCF_000005845.2/GCF_000005845.2_ASM584v2_genomic.fna"
+    );
+
+
+    if (!dna.isLoaded())
+    {
+        std::cerr
+            << "Error: no se pudo cargar el ADN.\n";
+
+        return -1;
+    }
+
+
+    // ========================================================
+    // 7. RENDERERS
     // ========================================================
 
     GridRenderer gridRenderer;
 
 
+    DNARenderer dnaRenderer(
+        dna
+    );
+
+
     // ========================================================
-    // 7. MAIN LOOP
+    // 8. MAIN LOOP
     // ========================================================
 
     while (!window.shouldClose())
@@ -146,8 +171,22 @@ int main()
         window.clear();
 
 
+        // ----------------------------------------------------
+        // Grid
+        // ----------------------------------------------------
+
         gridRenderer.render(
             grid,
+            camera,
+            window
+        );
+
+
+        // ----------------------------------------------------
+        // DNA
+        // ----------------------------------------------------
+
+        dnaRenderer.render(
             camera,
             window
         );
@@ -160,6 +199,10 @@ int main()
         window.present();
     }
 
+
+    // ========================================================
+    // EXIT
+    // ========================================================
 
     return 0;
 }

@@ -354,6 +354,22 @@ void Shader::setVec3(
     );
 }
 
+// ============================================================
+// SET FLOAT
+// ============================================================
+
+void Shader::setFloat(
+    const char* name,
+    float value
+) const
+{
+    glUniform1f(
+        getUniformLocation(name),
+        value
+    );
+}
+
+
 
 // ============================================================
 // GET UNIFORM LOCATION
