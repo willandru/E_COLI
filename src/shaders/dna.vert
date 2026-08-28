@@ -1,6 +1,5 @@
 #version 330 core
 
-
 // ============================================================
 // INPUT
 // ============================================================
@@ -15,18 +14,15 @@ layout(location = 1) in uint base;
 // ============================================================
 
 uniform mat4 model;
-
 uniform mat4 view;
-
 uniform mat4 projection;
 
 
 // ============================================================
-// PARAMETERS
+// PARÁMETROS
 // ============================================================
 
 uniform float particleRadius;
-
 uniform float particleSpacing;
 
 
@@ -38,6 +34,8 @@ flat out uint baseType;
 
 out vec2 localPosition;
 
+out vec3 particleViewPosition;
+
 
 // ============================================================
 // MAIN
@@ -46,19 +44,19 @@ out vec2 localPosition;
 void main()
 {
     // ========================================================
-    // Índice
+    // Índice de instancia
     // ========================================================
 
-    uint id =
+    uint instanceID =
         uint(gl_InstanceID);
 
 
     // ========================================================
-    // Posición
+    // Posición de la base
     // ========================================================
 
     float x =
-        float(id) *
+        float(instanceID) *
         particleSpacing;
 
 
@@ -71,43 +69,59 @@ void main()
 
 
     // ========================================================
-    // Quad
+    // Centro de la partícula en VIEW SPACE
     // ========================================================
 
-    vec3 offset =
-        vec3(
-            vertexPosition *
-            particleRadius,
-            0.0
-        );
-
-
-    vec4 worldPosition =
+    vec4 viewCenter =
+        view *
         model *
         vec4(
-            particlePosition + offset,
+            particlePosition,
             1.0
         );
 
 
+    particleViewPosition =
+        viewCenter.xyz;
+
+
     // ========================================================
-    // Transformación
+    // BILLBOARD
+    //
+    // El quad se construye directamente en
+    // coordenadas de cámara.
+    // ========================================================
+
+    vec4 vertexViewPosition =
+        viewCenter;
+
+
+    vertexViewPosition.xy +=
+        vertexPosition *
+        particleRadius;
+
+
+    // ========================================================
+    // PROYECCIÓN
     // ========================================================
 
     gl_Position =
         projection *
-        view *
-        worldPosition;
+        vertexViewPosition;
 
 
     // ========================================================
-    // Datos
+    // Coordenadas locales
+    // ========================================================
+
+    localPosition =
+        vertexPosition;
+
+
+    // ========================================================
+    // Base
     // ========================================================
 
     baseType =
         base;
-
-
-    localPosition =
-        vertexPosition;
 }
