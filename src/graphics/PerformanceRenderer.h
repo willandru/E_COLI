@@ -2,27 +2,57 @@
 
 #include "Performance.h"
 #include "Window.h"
+#include "DNA.h"
 
-#include <glad/glad.h>
 #include <glm/glm.hpp>
 
 #include <map>
 #include <string>
 
 
+// ============================================================
+// CHARACTER
+// ============================================================
+
+struct Character
+{
+    unsigned int textureID;
+
+    glm::ivec2 size;
+
+    glm::ivec2 bearing;
+
+    unsigned int advance;
+};
+
+
+// ============================================================
+// PERFORMANCE RENDERER
+// ============================================================
+
 class PerformanceRenderer
 {
 public:
 
+    // ========================================================
+    // Constructor
+    // ========================================================
+
     PerformanceRenderer(
-        const char* fontPath
+        const char* fontPath,
+        const DNA& dna
     );
+
+
+    // ========================================================
+    // Destructor
+    // ========================================================
 
     ~PerformanceRenderer();
 
 
     // ========================================================
-    // RENDER
+    // Render
     // ========================================================
 
     void render(
@@ -32,12 +62,13 @@ public:
 
 
     // ========================================================
-    // ENABLE / DISABLE
+    // Visibility
     // ========================================================
 
     void setVisible(
         bool visible
     );
+
 
     bool isVisible() const;
 
@@ -45,34 +76,23 @@ public:
 private:
 
     // ========================================================
-    // CHARACTER
+    // Shader
     // ========================================================
 
-    struct Character
-    {
-        unsigned int textureID;
-
-        glm::ivec2 size;
-
-        glm::ivec2 bearing;
-
-        unsigned int advance;
-    };
+    void initializeShader();
 
 
     // ========================================================
-    // INITIALIZATION
+    // Font
     // ========================================================
 
     void initializeFont(
         const char* fontPath
     );
 
-    void initializeShader();
-
 
     // ========================================================
-    // TEXT
+    // Text
     // ========================================================
 
     void renderText(
@@ -84,8 +104,10 @@ private:
     );
 
 
+private:
+
     // ========================================================
-    // OPENGL
+    // OpenGL
     // ========================================================
 
     unsigned int m_VAO;
@@ -96,24 +118,33 @@ private:
 
 
     // ========================================================
-    // UNIFORMS
+    // Uniforms
     // ========================================================
 
     int m_projectionLocation;
 
     int m_textColorLocation;
 
+    int m_textSamplerLocation;
+
 
     // ========================================================
-    // FONT
+    // Font
     // ========================================================
 
     std::map<char, Character> m_characters;
 
 
     // ========================================================
-    // STATE
+    // Estado
     // ========================================================
 
     bool m_visible;
+
+
+    // ========================================================
+    // DNA
+    // ========================================================
+
+    const DNA& m_dna;
 };

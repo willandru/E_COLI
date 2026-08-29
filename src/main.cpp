@@ -124,7 +124,8 @@ int main()
     // ========================================================
 
     PerformanceRenderer performanceRenderer(
-        "../assets/Agdasima/Agdasima-Regular.ttf"
+        "../assets/Agdasima/Agdasima-Regular.ttf",
+        dna
     );
 
 

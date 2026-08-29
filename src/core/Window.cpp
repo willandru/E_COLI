@@ -163,7 +163,7 @@ Window::Window(
     // V-Sync
     // ========================================================
 
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 }
 
 

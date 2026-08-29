@@ -15,10 +15,13 @@
 
 Performance::Performance()
     : m_enabled(true),
+
       m_frameTime(0.0f),
       m_fps(0.0f),
+
       m_updateTime(0.0f),
       m_renderTime(0.0f),
+
       m_fpsAccumulator(0.0),
       m_frameCount(0)
 {
@@ -50,11 +53,11 @@ void Performance::endFrame()
         return;
 
 
-    TimePoint current =
+    const TimePoint current =
         Clock::now();
 
 
-    std::chrono::duration<float, std::milli> duration =
+    const std::chrono::duration<float, std::milli> duration =
         current - m_frameStart;
 
 
@@ -67,25 +70,29 @@ void Performance::endFrame()
     // ========================================================
 
     m_fpsAccumulator +=
-        static_cast<double>(m_frameTime);
+        static_cast<double>(
+            m_frameTime
+        );
 
-    m_frameCount++;
 
+    ++m_frameCount;
 
-    // Actualizar FPS aproximadamente cada segundo
 
     if (m_fpsAccumulator >= 1000.0)
     {
         m_fps =
-            static_cast<float>(m_frameCount) /
             static_cast<float>(
-                m_fpsAccumulator / 1000.0
+                static_cast<double>(m_frameCount) /
+                (m_fpsAccumulator / 1000.0)
             );
 
 
-        m_fpsAccumulator = 0.0;
+        m_fpsAccumulator =
+            0.0;
 
-        m_frameCount = 0;
+
+        m_frameCount =
+            0;
     }
 }
 
@@ -115,11 +122,11 @@ void Performance::endUpdate()
         return;
 
 
-    TimePoint current =
+    const TimePoint current =
         Clock::now();
 
 
-    std::chrono::duration<float, std::milli> duration =
+    const std::chrono::duration<float, std::milli> duration =
         current - m_updateStart;
 
 
@@ -153,11 +160,11 @@ void Performance::endRender()
         return;
 
 
-    TimePoint current =
+    const TimePoint current =
         Clock::now();
 
 
-    std::chrono::duration<float, std::milli> duration =
+    const std::chrono::duration<float, std::milli> duration =
         current - m_renderStart;
 
 
@@ -214,7 +221,8 @@ float Performance::getMemoryMB() const
 {
 #ifdef _WIN32
 
-    PROCESS_MEMORY_COUNTERS memoryInfo;
+    PROCESS_MEMORY_COUNTERS memoryInfo{};
+
 
     if (GetProcessMemoryInfo(
         GetCurrentProcess(),
@@ -222,8 +230,14 @@ float Performance::getMemoryMB() const
         sizeof(memoryInfo)
     ))
     {
+        const double bytes =
+            static_cast<double>(
+                memoryInfo.WorkingSetSize
+            );
+
+
         return static_cast<float>(
-            memoryInfo.WorkingSetSize /
+            bytes /
             (1024.0 * 1024.0)
         );
     }

@@ -1,5 +1,7 @@
 #include "PerformanceRenderer.h"
 
+#include <glad/glad.h>
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
@@ -15,6 +17,7 @@
 // ============================================================
 
 static const char* TEXT_VERTEX_SHADER = R"(
+
 #version 330 core
 
 layout (location = 0) in vec4 vertex;
@@ -36,6 +39,7 @@ void main()
     TexCoords =
         vertex.zw;
 }
+
 )";
 
 
@@ -44,6 +48,7 @@ void main()
 // ============================================================
 
 static const char* TEXT_FRAGMENT_SHADER = R"(
+
 #version 330 core
 
 in vec2 TexCoords;
@@ -68,6 +73,7 @@ void main()
             alpha
         );
 }
+
 )";
 
 
@@ -76,16 +82,32 @@ void main()
 // ============================================================
 
 PerformanceRenderer::PerformanceRenderer(
-    const char* fontPath
+    const char* fontPath,
+    const DNA& dna
 )
-    : m_VAO(0),
+    :
+      m_VAO(0),
       m_VBO(0),
       m_shaderProgram(0),
+
       m_projectionLocation(-1),
       m_textColorLocation(-1),
-      m_visible(true)
+      m_textSamplerLocation(-1),
+
+      m_visible(true),
+
+      m_dna(dna)
 {
+    // ========================================================
+    // SHADER
+    // ========================================================
+
     initializeShader();
+
+
+    // ========================================================
+    // FONT
+    // ========================================================
 
     initializeFont(
         fontPath
@@ -93,13 +115,14 @@ PerformanceRenderer::PerformanceRenderer(
 
 
     // ========================================================
-    // VAO / VBO
+    // VAO
     // ========================================================
 
     glGenVertexArrays(
         1,
         &m_VAO
     );
+
 
     glGenBuffers(
         1,
@@ -110,6 +133,7 @@ PerformanceRenderer::PerformanceRenderer(
     glBindVertexArray(
         m_VAO
     );
+
 
     glBindBuffer(
         GL_ARRAY_BUFFER,
@@ -145,13 +169,14 @@ PerformanceRenderer::PerformanceRenderer(
         0
     );
 
+
     glBindVertexArray(
         0
     );
 
 
     // ========================================================
-    // UNIFORM LOCATIONS
+    // UNIFORMS
     // ========================================================
 
     m_projectionLocation =
@@ -160,10 +185,18 @@ PerformanceRenderer::PerformanceRenderer(
             "projection"
         );
 
+
     m_textColorLocation =
         glGetUniformLocation(
             m_shaderProgram,
             "textColor"
+        );
+
+
+    m_textSamplerLocation =
+        glGetUniformLocation(
+            m_shaderProgram,
+            "text"
         );
 }
 
@@ -208,7 +241,7 @@ PerformanceRenderer::~PerformanceRenderer()
 void PerformanceRenderer::initializeShader()
 {
     // ========================================================
-    // VERTEX SHADER
+    // VERTEX
     // ========================================================
 
     unsigned int vertexShader =
@@ -231,7 +264,7 @@ void PerformanceRenderer::initializeShader()
 
 
     // ========================================================
-    // FRAGMENT SHADER
+    // FRAGMENT
     // ========================================================
 
     unsigned int fragmentShader =
@@ -286,6 +319,7 @@ void PerformanceRenderer::initializeShader()
         vertexShader
     );
 
+
     glDeleteShader(
         fragmentShader
     );
@@ -327,7 +361,7 @@ void PerformanceRenderer::initializeFont(
         std::cerr
             << "Error: no se pudo cargar la fuente: "
             << fontPath
-            << "\n";
+            << '\n';
 
 
         FT_Done_FreeType(
@@ -350,7 +384,7 @@ void PerformanceRenderer::initializeFont(
 
 
     // ========================================================
-    // ALPHA TEXTURE
+    // ALPHA
     // ========================================================
 
     glPixelStorei(
@@ -360,10 +394,10 @@ void PerformanceRenderer::initializeFont(
 
 
     // ========================================================
-    // ASCII CHARACTERS
+    // ASCII
     // ========================================================
 
-    for (unsigned char c = 0; c < 128; c++)
+    for (unsigned char c = 0; c < 128; ++c)
     {
         if (FT_Load_Char(
             face,
@@ -371,12 +405,6 @@ void PerformanceRenderer::initializeFont(
             FT_LOAD_RENDER
         ))
         {
-            std::cerr
-                << "Advertencia: no se pudo cargar "
-                << "el caracter "
-                << static_cast<char>(c)
-                << "\n";
-
             continue;
         }
 
@@ -409,15 +437,12 @@ void PerformanceRenderer::initializeFont(
         );
 
 
-        // ====================================================
-        // TEXTURE PARAMETERS
-        // ====================================================
-
         glTexParameteri(
             GL_TEXTURE_2D,
             GL_TEXTURE_WRAP_S,
             GL_CLAMP_TO_EDGE
         );
+
 
         glTexParameteri(
             GL_TEXTURE_2D,
@@ -425,11 +450,13 @@ void PerformanceRenderer::initializeFont(
             GL_CLAMP_TO_EDGE
         );
 
+
         glTexParameteri(
             GL_TEXTURE_2D,
             GL_TEXTURE_MIN_FILTER,
             GL_LINEAR
         );
+
 
         glTexParameteri(
             GL_TEXTURE_2D,
@@ -437,10 +464,6 @@ void PerformanceRenderer::initializeFont(
             GL_LINEAR
         );
 
-
-        // ====================================================
-        // CHARACTER DATA
-        // ====================================================
 
         Character character;
 
@@ -469,11 +492,9 @@ void PerformanceRenderer::initializeFont(
             );
 
 
-        m_characters.insert(
-            std::pair<char, Character>(
-                c,
-                character
-            )
+        m_characters.emplace(
+            static_cast<char>(c),
+            character
         );
     }
 
@@ -509,10 +530,11 @@ void PerformanceRenderer::render(
 
 
     // ========================================================
-    // SAVE DEPTH STATE
+    // SAVE DEPTH
     // ========================================================
 
-    GLboolean depthTestEnabled;
+    GLboolean depthTestEnabled = GL_FALSE;
+
 
     glGetBooleanv(
         GL_DEPTH_TEST,
@@ -524,6 +546,7 @@ void PerformanceRenderer::render(
         GL_DEPTH_TEST
     );
 
+
     // ========================================================
     // BLENDING
     // ========================================================
@@ -532,6 +555,7 @@ void PerformanceRenderer::render(
         GL_BLEND
     );
 
+
     glBlendFunc(
         GL_SRC_ALPHA,
         GL_ONE_MINUS_SRC_ALPHA
@@ -539,7 +563,7 @@ void PerformanceRenderer::render(
 
 
     // ========================================================
-    // 2D PROJECTION
+    // PROJECTION
     // ========================================================
 
     glm::mat4 projection =
@@ -580,17 +604,14 @@ void PerformanceRenderer::render(
     );
 
 
-    glActiveTexture(
-        GL_TEXTURE0
+    glUniform1i(
+        m_textSamplerLocation,
+        0
     );
 
 
-    glUniform1i(
-        glGetUniformLocation(
-            m_shaderProgram,
-            "text"
-        ),
-        0
+    glActiveTexture(
+        GL_TEXTURE0
     );
 
 
@@ -600,26 +621,46 @@ void PerformanceRenderer::render(
 
 
     // ========================================================
+    // DNA INFORMATION
+    // ========================================================
+
+    const std::size_t dnaBases =
+        m_dna.getLength();
+
+
+    double dnaMbp =
+        static_cast<double>(dnaBases) /
+        1'000'000.0;
+
+
+    double dnaGpuMB =
+        static_cast<double>(dnaBases) /
+        (1024.0 * 1024.0);
+
+
+    // ========================================================
     // FPS
     // ========================================================
 
     std::ostringstream fpsText;
 
+
     fpsText
-        << "FPS: "
+        << "FPS       "
         << std::fixed
         << std::setprecision(1)
         << performance.getFPS();
 
 
     // ========================================================
-    // FRAME TIME
+    // FRAME
     // ========================================================
 
     std::ostringstream frameText;
 
+
     frameText
-        << "Frame: "
+        << "Frame     "
         << std::fixed
         << std::setprecision(2)
         << performance.getFrameTime()
@@ -627,13 +668,14 @@ void PerformanceRenderer::render(
 
 
     // ========================================================
-    // UPDATE TIME
+    // UPDATE
     // ========================================================
 
     std::ostringstream updateText;
 
+
     updateText
-        << "Update: "
+        << "Update    "
         << std::fixed
         << std::setprecision(2)
         << performance.getUpdateTime()
@@ -641,13 +683,18 @@ void PerformanceRenderer::render(
 
 
     // ========================================================
-    // RENDER TIME
+    // RENDER CPU
+    //
+    // IMPORTANTE:
+    // No llamamos esta variable "renderText"
+    // porque ya existe el método renderText().
     // ========================================================
 
-    std::ostringstream renderTimeText;
+    std::ostringstream renderCpuText;
 
-    renderTimeText
-        << "Render: "
+
+    renderCpuText
+        << "Render CPU "
         << std::fixed
         << std::setprecision(2)
         << performance.getRenderTime()
@@ -655,16 +702,60 @@ void PerformanceRenderer::render(
 
 
     // ========================================================
-    // MEMORY
+    // RAM
     // ========================================================
 
-    std::ostringstream memoryText;
+    std::ostringstream ramText;
 
-    memoryText
-        << "RAM: "
+
+    ramText
+        << "RAM       "
         << std::fixed
         << std::setprecision(1)
         << performance.getMemoryMB()
+        << " MB";
+
+
+    // ========================================================
+    // DNA BASES
+    // ========================================================
+
+    std::ostringstream basesText;
+
+
+    basesText
+        << "DNA       "
+        << dnaBases
+        << " bp";
+
+
+    // ========================================================
+    // DNA SIZE
+    // ========================================================
+
+    std::ostringstream mbpText;
+
+
+    mbpText
+        << "DNA       "
+        << std::fixed
+        << std::setprecision(3)
+        << dnaMbp
+        << " Mbp";
+
+
+    // ========================================================
+    // GPU BUFFER
+    // ========================================================
+
+    std::ostringstream gpuText;
+
+
+    gpuText
+        << "DNA GPU   "
+        << std::fixed
+        << std::setprecision(2)
+        << dnaGpuMB
         << " MB";
 
 
@@ -674,13 +765,21 @@ void PerformanceRenderer::render(
 
     float x = 20.0f;
 
+
     float y =
         static_cast<float>(
             window.getHeight()
-        ) - 30.0f;
+        ) - 28.0f;
 
 
-    float scale = 1.0f;
+    const float lineHeight = 21.0f;
+
+
+    const glm::vec3 color(
+        0.85f,
+        0.90f,
+        0.95f
+    );
 
 
     // ========================================================
@@ -691,81 +790,97 @@ void PerformanceRenderer::render(
         fpsText.str(),
         x,
         y,
-        scale,
-        glm::vec3(
-            0.85f,
-            0.90f,
-            0.95f
-        )
+        1.0f,
+        color
     );
 
 
-    y -= 22.0f;
+    y -= lineHeight;
 
 
     renderText(
         frameText.str(),
         x,
         y,
-        scale,
-        glm::vec3(
-            0.85f,
-            0.90f,
-            0.95f
-        )
+        1.0f,
+        color
     );
 
 
-    y -= 22.0f;
+    y -= lineHeight;
 
 
     renderText(
         updateText.str(),
         x,
         y,
-        scale,
-        glm::vec3(
-            0.85f,
-            0.90f,
-            0.95f
-        )
+        1.0f,
+        color
     );
 
 
-    y -= 22.0f;
+    y -= lineHeight;
 
 
     renderText(
-        renderTimeText.str(),
+        renderCpuText.str(),
         x,
         y,
-        scale,
-        glm::vec3(
-            0.85f,
-            0.90f,
-            0.95f
-        )
+        1.0f,
+        color
     );
 
 
-    y -= 22.0f;
+    y -= lineHeight;
 
 
     renderText(
-        memoryText.str(),
+        ramText.str(),
         x,
         y,
-        scale,
-        glm::vec3(
-            0.85f,
-            0.90f,
-            0.95f
-        )
+        1.0f,
+        color
+    );
+
+
+    y -= lineHeight;
+
+
+    renderText(
+        basesText.str(),
+        x,
+        y,
+        1.0f,
+        color
+    );
+
+
+    y -= lineHeight;
+
+
+    renderText(
+        mbpText.str(),
+        x,
+        y,
+        1.0f,
+        color
+    );
+
+
+    y -= lineHeight;
+
+
+    renderText(
+        gpuText.str(),
+        x,
+        y,
+        1.0f,
+        color
     );
 
 
     // ========================================================
-    // CLEANUP STATE
+    // CLEANUP
     // ========================================================
 
     glBindVertexArray(
@@ -779,8 +894,13 @@ void PerformanceRenderer::render(
     );
 
 
+    glUseProgram(
+        0
+    );
+
+
     // ========================================================
-    // RESTORE DEPTH TEST
+    // RESTORE DEPTH
     // ========================================================
 
     if (depthTestEnabled)
@@ -789,6 +909,11 @@ void PerformanceRenderer::render(
             GL_DEPTH_TEST
         );
     }
+
+
+    glDisable(
+        GL_BLEND
+    );
 }
 
 
@@ -814,8 +939,19 @@ void PerformanceRenderer::renderText(
 
     for (const char c : text)
     {
+        auto iterator =
+            m_characters.find(c);
+
+
+        if (iterator ==
+            m_characters.end())
+        {
+            continue;
+        }
+
+
         const Character& character =
-            m_characters[c];
+            iterator->second;
 
 
         float xpos =
@@ -826,8 +962,10 @@ void PerformanceRenderer::renderText(
 
         float ypos =
             y -
-            (character.size.y -
-             character.bearing.y) *
+            (
+                character.size.y -
+                character.bearing.y
+            ) *
             scale;
 
 
