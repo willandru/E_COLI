@@ -28,10 +28,12 @@ add_subdirectory(
 # ============================================================
 
 add_library(glad STATIC
+
     externals/glad/src/glad.c
 )
 
 target_include_directories(glad PUBLIC
+
     externals/glad/include
 )
 
@@ -43,7 +45,26 @@ target_include_directories(glad PUBLIC
 add_library(glm INTERFACE)
 
 target_include_directories(glm INTERFACE
+
     externals/glm
+)
+
+
+# ============================================================
+# FREETYPE
+# ============================================================
+
+set(FT_DISABLE_ZLIB ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_BZIP2 ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_PNG ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_BROTLI ON CACHE BOOL "" FORCE)
+
+add_subdirectory(
+
+    externals/ft2143/freetype-2.14.3
+
+    EXCLUDE_FROM_ALL
 )
 
 
@@ -52,7 +73,9 @@ target_include_directories(glm INTERFACE
 # ============================================================
 
 file(GLOB_RECURSE PROJECT_SOURCES
+
     CONFIGURE_DEPENDS
+
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
 
@@ -62,6 +85,7 @@ file(GLOB_RECURSE PROJECT_SOURCES
 # ============================================================
 
 add_executable(E_COLI
+
     ${PROJECT_SOURCES}
 )
 
@@ -71,7 +95,9 @@ add_executable(E_COLI
 # ============================================================
 
 file(GLOB PROJECT_INCLUDE_DIRS
+
     LIST_DIRECTORIES true
+
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*"
 )
 
@@ -84,6 +110,8 @@ target_include_directories(E_COLI PRIVATE
     externals/glad/include
 
     externals/glm
+
+    externals/ft2143/freetype-2.14.3/include
 )
 
 
@@ -98,6 +126,8 @@ target_link_libraries(E_COLI PRIVATE
     glfw
 
     glm
+
+    freetype
 )
 
 
@@ -106,7 +136,9 @@ target_link_libraries(E_COLI PRIVATE
 # ============================================================
 
 add_custom_command(
+
     TARGET E_COLI
+
     POST_BUILD
 
     COMMAND
