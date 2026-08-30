@@ -56,7 +56,7 @@ int main()
         glm::vec3(
             0.0f,
             3.0f,
-            35.0f
+            24.0f
         )
     );
 
@@ -98,8 +98,9 @@ int main()
     // 6. DNA
     // ========================================================
     //
-    // El ADN se mantiene cargado porque otros módulos pueden
-    // utilizarlo, pero NO se renderiza.
+    // Se mantiene cargado porque PerformanceRenderer lo utiliza.
+    //
+    // NO se renderiza.
     //
     // ========================================================
 
@@ -128,7 +129,7 @@ int main()
 
 
     // ========================================================
-    // 8. CONFIGURACIÓN DEL CAMPO ELECTRÓNICO
+    // 8. CONFIGURACIÓN ESPACIAL
     // ========================================================
 
     const glm::vec3 densitySize(
@@ -138,156 +139,75 @@ int main()
     );
 
 
+    // 50³ = 125000 muestras por orbital.
+    //
+    // La densidad se calcula una sola vez al iniciar.
+    //
+
     const glm::ivec3 densityResolution(
-        70,
-        70,
-        70
+        50,
+        50,
+        50
     );
 
 
     // ========================================================
-    // 9. ESPACIAMIENTO DE LOS GRUPOS
+    // 9. POSICIONES DE LOS ORBITALES
     // ========================================================
     //
-    // Cada grupo se encuentra separado sobre X.
+    // Todos están alineados sobre X.
     //
-    //     1s
+    // Separamos suficientemente cada orbital para que
+    // visualmente no se mezclen.
     //
-    //          2s + 2p
+    //       1s      2s      2px      2py      2pz
     //
-    //                    3s + 3p
-    //
-    //                              4s + 4p
+    //        ●       ●        ∞        ∞        ∞
     //
     // ========================================================
-
-    constexpr float GROUP_SPACING = 18.0f;
-
-
-    const float group1X = -27.0f;
-    const float group2X =  -9.0f;
-    const float group3X =   9.0f;
-    const float group4X =  27.0f;
-
-
-    // ========================================================
-    // 10. POSICIONES DE LOS ORBITALES
-    // ========================================================
-
-    // --------------------------------------------------------
-    // Grupo 1
-    // --------------------------------------------------------
 
     const glm::vec3 position1s(
-        group1X,
+        -20.0f,
         0.0f,
         0.0f
     );
 
 
-    // --------------------------------------------------------
-    // Grupo 2
-    // --------------------------------------------------------
-
     const glm::vec3 position2s(
-        group2X,
+        -10.0f,
         0.0f,
         0.0f
     );
 
 
     const glm::vec3 position2px(
-        group2X,
+        0.0f,
         0.0f,
         0.0f
     );
 
 
     const glm::vec3 position2py(
-        group2X,
+        10.0f,
         0.0f,
         0.0f
     );
 
 
     const glm::vec3 position2pz(
-        group2X,
-        0.0f,
-        0.0f
-    );
-
-
-    // --------------------------------------------------------
-    // Grupo 3
-    // --------------------------------------------------------
-
-    const glm::vec3 position3s(
-        group3X,
-        0.0f,
-        0.0f
-    );
-
-
-    const glm::vec3 position3px(
-        group3X,
-        0.0f,
-        0.0f
-    );
-
-
-    const glm::vec3 position3py(
-        group3X,
-        0.0f,
-        0.0f
-    );
-
-
-    const glm::vec3 position3pz(
-        group3X,
-        0.0f,
-        0.0f
-    );
-
-
-    // --------------------------------------------------------
-    // Grupo 4
-    // --------------------------------------------------------
-
-    const glm::vec3 position4s(
-        group4X,
-        0.0f,
-        0.0f
-    );
-
-
-    const glm::vec3 position4px(
-        group4X,
-        0.0f,
-        0.0f
-    );
-
-
-    const glm::vec3 position4py(
-        group4X,
-        0.0f,
-        0.0f
-    );
-
-
-    const glm::vec3 position4pz(
-        group4X,
+        20.0f,
         0.0f,
         0.0f
     );
 
 
     // ========================================================
-    // 11. ATOMIC ORBITALS
+    // 10. ATOMIC ORBITALS
     // ========================================================
 
-    // ========================================================
+    // --------------------------------------------------------
     // 1s
-    // ========================================================
+    // --------------------------------------------------------
 
     Chemistry::AtomicOrbital orbital1s(
         1,
@@ -297,9 +217,9 @@ int main()
     );
 
 
-    // ========================================================
+    // --------------------------------------------------------
     // 2s
-    // ========================================================
+    // --------------------------------------------------------
 
     Chemistry::AtomicOrbital orbital2s(
         2,
@@ -309,9 +229,9 @@ int main()
     );
 
 
-    // ========================================================
-    // 2p
-    // ========================================================
+    // --------------------------------------------------------
+    // 2px
+    // --------------------------------------------------------
 
     Chemistry::AtomicOrbital orbital2px(
         2,
@@ -321,6 +241,10 @@ int main()
     );
 
 
+    // --------------------------------------------------------
+    // 2py
+    // --------------------------------------------------------
+
     Chemistry::AtomicOrbital orbital2py(
         2,
         Chemistry::OrbitalType::P,
@@ -328,6 +252,10 @@ int main()
         position2py
     );
 
+
+    // --------------------------------------------------------
+    // 2pz
+    // --------------------------------------------------------
 
     Chemistry::AtomicOrbital orbital2pz(
         2,
@@ -338,87 +266,7 @@ int main()
 
 
     // ========================================================
-    // 3s
-    // ========================================================
-
-    Chemistry::AtomicOrbital orbital3s(
-        3,
-        Chemistry::OrbitalType::S,
-        Chemistry::OrbitalOrientation::None,
-        position3s
-    );
-
-
-    // ========================================================
-    // 3p
-    // ========================================================
-
-    Chemistry::AtomicOrbital orbital3px(
-        3,
-        Chemistry::OrbitalType::P,
-        Chemistry::OrbitalOrientation::X,
-        position3px
-    );
-
-
-    Chemistry::AtomicOrbital orbital3py(
-        3,
-        Chemistry::OrbitalType::P,
-        Chemistry::OrbitalOrientation::Y,
-        position3py
-    );
-
-
-    Chemistry::AtomicOrbital orbital3pz(
-        3,
-        Chemistry::OrbitalType::P,
-        Chemistry::OrbitalOrientation::Z,
-        position3pz
-    );
-
-
-    // ========================================================
-    // 4s
-    // ========================================================
-
-    Chemistry::AtomicOrbital orbital4s(
-        4,
-        Chemistry::OrbitalType::S,
-        Chemistry::OrbitalOrientation::None,
-        position4s
-    );
-
-
-    // ========================================================
-    // 4p
-    // ========================================================
-
-    Chemistry::AtomicOrbital orbital4px(
-        4,
-        Chemistry::OrbitalType::P,
-        Chemistry::OrbitalOrientation::X,
-        position4px
-    );
-
-
-    Chemistry::AtomicOrbital orbital4py(
-        4,
-        Chemistry::OrbitalType::P,
-        Chemistry::OrbitalOrientation::Y,
-        position4py
-    );
-
-
-    Chemistry::AtomicOrbital orbital4pz(
-        4,
-        Chemistry::OrbitalType::P,
-        Chemistry::OrbitalOrientation::Z,
-        position4pz
-    );
-
-
-    // ========================================================
-    // 12. ELECTRON DENSITIES
+    // 11. ELECTRON DENSITIES
     // ========================================================
 
     Chemistry::ElectronDensity density1s(
@@ -456,65 +304,13 @@ int main()
     );
 
 
-    Chemistry::ElectronDensity density3s(
-        position3s - densitySize * 0.5f,
-        densitySize,
-        densityResolution
-    );
-
-
-    Chemistry::ElectronDensity density3px(
-        position3px - densitySize * 0.5f,
-        densitySize,
-        densityResolution
-    );
-
-
-    Chemistry::ElectronDensity density3py(
-        position3py - densitySize * 0.5f,
-        densitySize,
-        densityResolution
-    );
-
-
-    Chemistry::ElectronDensity density3pz(
-        position3pz - densitySize * 0.5f,
-        densitySize,
-        densityResolution
-    );
-
-
-    Chemistry::ElectronDensity density4s(
-        position4s - densitySize * 0.5f,
-        densitySize,
-        densityResolution
-    );
-
-
-    Chemistry::ElectronDensity density4px(
-        position4px - densitySize * 0.5f,
-        densitySize,
-        densityResolution
-    );
-
-
-    Chemistry::ElectronDensity density4py(
-        position4py - densitySize * 0.5f,
-        densitySize,
-        densityResolution
-    );
-
-
-    Chemistry::ElectronDensity density4pz(
-        position4pz - densitySize * 0.5f,
-        densitySize,
-        densityResolution
-    );
-
-
     // ========================================================
-    // 13. GENERAR DENSIDADES
+    // 12. GENERAR DENSIDADES
     // ========================================================
+
+    std::cout
+        << "Generando densidad electronica...\n";
+
 
     density1s.generate(
         orbital1s
@@ -541,52 +337,72 @@ int main()
     );
 
 
-    density3s.generate(
-        orbital3s
-    );
-
-
-    density3px.generate(
-        orbital3px
-    );
-
-
-    density3py.generate(
-        orbital3py
-    );
-
-
-    density3pz.generate(
-        orbital3pz
-    );
-
-
-    density4s.generate(
-        orbital4s
-    );
-
-
-    density4px.generate(
-        orbital4px
-    );
-
-
-    density4py.generate(
-        orbital4py
-    );
-
-
-    density4pz.generate(
-        orbital4pz
-    );
+    std::cout
+        << "Densidades generadas.\n";
 
 
     // ========================================================
-    // 14. ELECTRON DENSITY RENDERER
+    // 13. RENDERERS
+    // ========================================================
+    //
+    // Un renderer independiente por orbital.
+    //
+    // Cada uno posee su propio VAO/VBO.
+    //
     // ========================================================
 
-    Chemistry::ElectronDensityRenderer
-        electronDensityRenderer;
+    Chemistry::ElectronDensityRenderer renderer1s;
+
+    Chemistry::ElectronDensityRenderer renderer2s;
+
+    Chemistry::ElectronDensityRenderer renderer2px;
+
+    Chemistry::ElectronDensityRenderer renderer2py;
+
+    Chemistry::ElectronDensityRenderer renderer2pz;
+
+
+    // ========================================================
+    // 14. BUILD GPU
+    // ========================================================
+    //
+    // Se ejecuta UNA SOLA VEZ.
+    //
+    // No se vuelve a construir durante el loop.
+    //
+    // ========================================================
+
+    std::cout
+        << "Subiendo orbitales a GPU...\n";
+
+
+    renderer1s.build(
+        density1s
+    );
+
+
+    renderer2s.build(
+        density2s
+    );
+
+
+    renderer2px.build(
+        density2px
+    );
+
+
+    renderer2py.build(
+        density2py
+    );
+
+
+    renderer2pz.build(
+        density2pz
+    );
+
+
+    std::cout
+        << "Orbitales listos.\n";
 
 
     // ========================================================
@@ -606,7 +422,7 @@ int main()
     while (!window.shouldClose())
     {
         // ====================================================
-        // PERFORMANCE - BEGIN FRAME
+        // BEGIN FRAME
         // ====================================================
 
         performance.beginFrame();
@@ -697,7 +513,7 @@ int main()
         // 1s
         // ====================================================
 
-        electronDensityRenderer.render(
+        renderer1s.render(
             density1s,
             camera,
             window
@@ -708,7 +524,7 @@ int main()
         // 2s
         // ====================================================
 
-        electronDensityRenderer.render(
+        renderer2s.render(
             density2s,
             camera,
             window
@@ -719,7 +535,7 @@ int main()
         // 2px
         // ====================================================
 
-        electronDensityRenderer.render(
+        renderer2px.render(
             density2px,
             camera,
             window
@@ -730,7 +546,7 @@ int main()
         // 2py
         // ====================================================
 
-        electronDensityRenderer.render(
+        renderer2py.render(
             density2py,
             camera,
             window
@@ -741,7 +557,7 @@ int main()
         // 2pz
         // ====================================================
 
-        electronDensityRenderer.render(
+        renderer2pz.render(
             density2pz,
             camera,
             window
@@ -749,96 +565,12 @@ int main()
 
 
         // ====================================================
-        // 3s
+        // DNA
         // ====================================================
-
-        electronDensityRenderer.render(
-            density3s,
-            camera,
-            window
-        );
-
-
+        //
+        // NO SE RENDERIZA.
+        //
         // ====================================================
-        // 3px
-        // ====================================================
-
-        electronDensityRenderer.render(
-            density3px,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // 3py
-        // ====================================================
-
-        electronDensityRenderer.render(
-            density3py,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // 3pz
-        // ====================================================
-
-        electronDensityRenderer.render(
-            density3pz,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // 4s
-        // ====================================================
-
-        electronDensityRenderer.render(
-            density4s,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // 4px
-        // ====================================================
-
-        electronDensityRenderer.render(
-            density4px,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // 4py
-        // ====================================================
-
-        electronDensityRenderer.render(
-            density4py,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // 4pz
-        // ====================================================
-
-        electronDensityRenderer.render(
-            density4pz,
-            camera,
-            window
-        );
-
-
-        // ----------------------------------------------------
-        // NO SE RENDERIZA DNA
-        // ----------------------------------------------------
 
 
         performance.endRender();
@@ -862,8 +594,8 @@ int main()
 
 
         // ====================================================
-        // PERFORMANCE - END FRAME
-        // ====================================================
+        // END FRAME
+        // ========================================================
 
         performance.endFrame();
     }

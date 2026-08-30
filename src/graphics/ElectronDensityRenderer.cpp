@@ -12,16 +12,22 @@ namespace
 {
 
 // ============================================================
-// CONFIGURACIÓN DE RENDER
+// CONFIGURACIÓN
 // ============================================================
 
-// Densidades inferiores a este valor normalizado no se
-// renderizan.
+// Umbral de densidad.
+//
+// Todo punto con una densidad relativa menor a este valor
+// será descartado.
+//
+// ============================================================
 
 constexpr float DENSITY_THRESHOLD = 0.05f;
 
 
-// Tamaño visual de cada punto.
+// ============================================================
+// TAMAÑO DE LOS PUNTOS
+// ============================================================
 
 constexpr float POINT_SIZE = 3.0f;
 
@@ -29,13 +35,14 @@ constexpr float POINT_SIZE = 3.0f;
 
 
 // ============================================================
-// Constructor
+// CONSTRUCTOR
 // ============================================================
 
 ElectronDensityRenderer::ElectronDensityRenderer()
     : VAO(0),
       VBO(0),
       vertexCount(0),
+      builtDensity(nullptr),
       shader(
           "shaders/electronDensity.vert",
           "shaders/electronDensity.frag"
@@ -46,7 +53,7 @@ ElectronDensityRenderer::ElectronDensityRenderer()
 
 
 // ============================================================
-// Destructor
+// DESTRUCTOR
 // ============================================================
 
 ElectronDensityRenderer::~ElectronDensityRenderer()
@@ -71,7 +78,7 @@ ElectronDensityRenderer::~ElectronDensityRenderer()
 
 
 // ============================================================
-// Initialize
+// INITIALIZE
 // ============================================================
 
 void ElectronDensityRenderer::initialize()
@@ -90,13 +97,40 @@ void ElectronDensityRenderer::initialize()
 
 
 // ============================================================
-// Build points
+// BUILD
+// ============================================================
+//
+// Esta función se ejecuta solamente cuando queremos preparar
+// una nueva densidad para renderización.
+//
+// ============================================================
+
+void ElectronDensityRenderer::build(
+    const ElectronDensity& density
+)
+{
+    buildPoints(
+        density
+    );
+
+
+    builtDensity =
+        &density;
+}
+
+
+// ============================================================
+// BUILD POINTS
 // ============================================================
 
 void ElectronDensityRenderer::buildPoints(
     const ElectronDensity& density
 )
 {
+    // ========================================================
+    // ESTRUCTURA DEL VÉRTICE
+    // ========================================================
+
     struct Vertex
     {
         glm::vec3 position;
@@ -107,6 +141,10 @@ void ElectronDensityRenderer::buildPoints(
 
     std::vector<Vertex> vertices;
 
+
+    // ========================================================
+    // INFORMACIÓN DE LA REJILLA
+    // ========================================================
 
     const glm::ivec3 resolution =
         density.getResolution();
@@ -119,6 +157,10 @@ void ElectronDensityRenderer::buildPoints(
     vertexCount = 0;
 
 
+    // ========================================================
+    // VALIDACIÓN
+    // ========================================================
+
     if (maximumDensity <= 0.0f)
     {
         return;
@@ -126,7 +168,34 @@ void ElectronDensityRenderer::buildPoints(
 
 
     // ========================================================
-    // Recorrer la rejilla
+    // RESERVA APROXIMADA
+    // ========================================================
+    //
+    // Evita múltiples realocaciones del vector.
+    //
+    // ========================================================
+
+    const std::size_t estimatedSize =
+        static_cast<std::size_t>(
+            resolution.x
+        )
+        *
+        static_cast<std::size_t>(
+            resolution.y
+        )
+        *
+        static_cast<std::size_t>(
+            resolution.z
+        );
+
+
+    vertices.reserve(
+        estimatedSize
+    );
+
+
+    // ========================================================
+    // RECORRER LA REJILLA
     // ========================================================
 
     for (int z = 0; z < resolution.z; ++z)
@@ -135,6 +204,10 @@ void ElectronDensityRenderer::buildPoints(
         {
             for (int x = 0; x < resolution.x; ++x)
             {
+                // =================================================
+                // DENSIDAD
+                // =================================================
+
                 const float value =
                     density.getDensity(
                         x,
@@ -143,17 +216,18 @@ void ElectronDensityRenderer::buildPoints(
                     );
 
 
-                // ------------------------------------------------
-                // Normalización
-                // ------------------------------------------------
+                // =================================================
+                // NORMALIZACIÓN
+                // =================================================
 
                 const float normalizedDensity =
-                    value / maximumDensity;
+                    value /
+                    maximumDensity;
 
 
-                // ------------------------------------------------
-                // Umbral
-                // ------------------------------------------------
+                // =================================================
+                // UMBRAL
+                // =================================================
 
                 if (
                     normalizedDensity <
@@ -164,9 +238,9 @@ void ElectronDensityRenderer::buildPoints(
                 }
 
 
-                // ------------------------------------------------
-                // Posición física
-                // ------------------------------------------------
+                // =================================================
+                // POSICIÓN EN ÅNGSTROMS
+                // =================================================
 
                 const glm::vec3 positionAngstrom =
                     density.getPosition(
@@ -176,14 +250,18 @@ void ElectronDensityRenderer::buildPoints(
                     );
 
 
-                // ------------------------------------------------
-                // Å -> OpenGL
-                // ------------------------------------------------
+                // =================================================
+                // CONVERSIÓN A OPENGL
+                // =================================================
 
                 const glm::vec3 positionOpenGL =
                     positionAngstrom *
                     ANGSTROM_TO_OPENGL;
 
+
+                // =================================================
+                // AGREGAR VÉRTICE
+                // =================================================
 
                 vertices.push_back(
                     {
@@ -197,7 +275,7 @@ void ElectronDensityRenderer::buildPoints(
 
 
     // ========================================================
-    // Número de vértices
+    // CONTADOR
     // ========================================================
 
     vertexCount =
@@ -207,7 +285,7 @@ void ElectronDensityRenderer::buildPoints(
 
 
     // ========================================================
-    // Upload GPU
+    // UPLOAD GPU
     // ========================================================
 
     glBindVertexArray(
@@ -230,12 +308,12 @@ void ElectronDensityRenderer::buildPoints(
         vertices.empty()
             ? nullptr
             : vertices.data(),
-        GL_DYNAMIC_DRAW
+        GL_STATIC_DRAW
     );
 
 
     // ========================================================
-    // Position
+    // POSITION
     // ========================================================
 
     glEnableVertexAttribArray(
@@ -249,12 +327,14 @@ void ElectronDensityRenderer::buildPoints(
         GL_FLOAT,
         GL_FALSE,
         sizeof(Vertex),
-        reinterpret_cast<void*>(0)
+        reinterpret_cast<void*>(
+            0
+        )
     );
 
 
     // ========================================================
-    // Density
+    // DENSITY
     // ========================================================
 
     glEnableVertexAttribArray(
@@ -275,7 +355,7 @@ void ElectronDensityRenderer::buildPoints(
 
 
     // ========================================================
-    // Unbind
+    // UNBIND
     // ========================================================
 
     glBindBuffer(
@@ -291,7 +371,15 @@ void ElectronDensityRenderer::buildPoints(
 
 
 // ============================================================
-// Render
+// RENDER
+// ============================================================
+//
+// IMPORTANTE:
+//
+// Ya NO se llama buildPoints() aquí.
+//
+// Por tanto, el campo no se recalcula durante cada frame.
+//
 // ============================================================
 
 void ElectronDensityRenderer::render(
@@ -301,13 +389,21 @@ void ElectronDensityRenderer::render(
 )
 {
     // ========================================================
-    // Construir puntos
+    // VERIFICAR QUE ESTA DENSIDAD ESTÁ CONSTRUIDA
     // ========================================================
 
-    buildPoints(
-        density
-    );
+    if (
+        builtDensity !=
+        &density
+    )
+    {
+        return;
+    }
 
+
+    // ========================================================
+    // VERIFICAR VÉRTICES
+    // ========================================================
 
     if (vertexCount <= 0)
     {
@@ -316,30 +412,34 @@ void ElectronDensityRenderer::render(
 
 
     // ========================================================
-    // Shader
+    // SHADER
     // ========================================================
 
     shader.bind();
 
 
     // ========================================================
-    // MATRICES
+    // VIEW
     // ========================================================
 
     const glm::mat4 view =
         camera.getViewMatrix();
 
 
-    const glm::mat4 projection =
-        camera.getProjectionMatrix(
-            window.getAspectRatio()
-        );
-
-
     shader.setMat4(
         "view",
         view
     );
+
+
+    // ========================================================
+    // PROJECTION
+    // ========================================================
+
+    const glm::mat4 projection =
+        camera.getProjectionMatrix(
+            window.getAspectRatio()
+        );
 
 
     shader.setMat4(
@@ -373,6 +473,10 @@ void ElectronDensityRenderer::render(
         vertexCount
     );
 
+
+    // ========================================================
+    // UNBIND
+    // ========================================================
 
     glBindVertexArray(
         0

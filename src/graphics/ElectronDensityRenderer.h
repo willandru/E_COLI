@@ -17,13 +17,23 @@ namespace Chemistry
 // ElectronDensityRenderer
 // ============================================================
 //
-// Renderiza el campo de densidad electrónica.
+// Renderiza un campo de densidad electrónica.
 //
 // La densidad se calcula en Ångstroms.
 //
-// Conversión visual:
+// Conversión:
 //
 //     1 Å = 0.2 unidades OpenGL
+//
+// La geometría se construye una sola vez mediante:
+//
+//     build()
+//
+// Posteriormente:
+//
+//     render()
+//
+// solamente envía los vértices existentes a la GPU.
 //
 // ============================================================
 
@@ -34,31 +44,48 @@ public:
     // ========================================================
     // ESCALA FÍSICA
     // ========================================================
-    //
-    // Esta es la única constante que necesitas modificar
-    // para cambiar la escala visual del campo.
-    //
-    // ========================================================
 
     static constexpr float ANGSTROM_TO_OPENGL = 0.2f;
 
 
     // ========================================================
-    // Constructor
+    // CONSTRUCTOR
     // ========================================================
 
     ElectronDensityRenderer();
 
 
     // ========================================================
-    // Destructor
+    // DESTRUCTOR
     // ========================================================
 
     ~ElectronDensityRenderer();
 
 
     // ========================================================
-    // Render
+    // BUILD
+    // ========================================================
+    //
+    // Construye la nube de puntos de una densidad.
+    //
+    // IMPORTANTE:
+    //
+    // Esta función debe llamarse una sola vez por densidad,
+    // antes del loop principal.
+    //
+    // ========================================================
+
+    void build(
+        const ElectronDensity& density
+    );
+
+
+    // ========================================================
+    // RENDER
+    // ========================================================
+    //
+    // Renderiza la densidad previamente construida.
+    //
     // ========================================================
 
     void render(
@@ -71,7 +98,7 @@ public:
 private:
 
     // ========================================================
-    // OpenGL
+    // DATOS DE OPENGL
     // ========================================================
 
     GLuint VAO;
@@ -82,21 +109,33 @@ private:
 
 
     // ========================================================
-    // Shader
+    // DENSIDAD ASOCIADA
+    // ========================================================
+    //
+    // El renderer necesita saber qué densidad fue construida
+    // para poder dibujarla correctamente.
+    //
+    // ========================================================
+
+    const ElectronDensity* builtDensity;
+
+
+    // ========================================================
+    // SHADER
     // ========================================================
 
     Shader shader;
 
 
     // ========================================================
-    // Inicialización
+    // INICIALIZACIÓN
     // ========================================================
 
     void initialize();
 
 
     // ========================================================
-    // Construcción de puntos
+    // CONSTRUCCIÓN INTERNA
     // ========================================================
 
     void buildPoints(
