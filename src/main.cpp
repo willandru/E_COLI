@@ -56,7 +56,7 @@ int main()
         glm::vec3(
             0.0f,
             3.0f,
-            24.0f
+            65.0f
         )
     );
 
@@ -89,16 +89,20 @@ int main()
     // ========================================================
 
     Grid grid(
-        100.0f,
-        100
+        150.0f,
+        150
     );
+
+
+    GridRenderer gridRenderer;
 
 
     // ========================================================
     // 6. DNA
     // ========================================================
     //
-    // Se mantiene cargado porque PerformanceRenderer lo utiliza.
+    // Se mantiene cargado porque PerformanceRenderer
+    // lo utiliza.
     //
     // NO se renderiza.
     //
@@ -122,14 +126,7 @@ int main()
 
 
     // ========================================================
-    // 7. GRID RENDERER
-    // ========================================================
-
-    GridRenderer gridRenderer;
-
-
-    // ========================================================
-    // 8. CONFIGURACIÓN ESPACIAL
+    // 7. CONFIGURACIÓN ESPACIAL
     // ========================================================
 
     const glm::vec3 densitySize(
@@ -139,11 +136,6 @@ int main()
     );
 
 
-    // 50³ = 125000 muestras por orbital.
-    //
-    // La densidad se calcula una sola vez al iniciar.
-    //
-
     const glm::ivec3 densityResolution(
         50,
         50,
@@ -152,50 +144,140 @@ int main()
 
 
     // ========================================================
-    // 9. POSICIONES DE LOS ORBITALES
+    // 8. CENTROS DE LOS GRUPOS
     // ========================================================
     //
-    // Todos están alineados sobre X.
+    // Todos los orbitales permanecen a:
     //
-    // Separamos suficientemente cada orbital para que
-    // visualmente no se mezclen.
+    //     Y = 0
+    //     Z = 0
     //
-    //       1s      2s      2px      2py      2pz
+    // Los grupos se distribuyen sobre X:
     //
-    //        ●       ●        ∞        ∞        ∞
+    //
+    //       1s       2s        2p        3s        3p
+    //
+    //        ●        ●       ● ● ●       ●       ● ● ●
+    //
     //
     // ========================================================
 
     const glm::vec3 position1s(
-        -20.0f,
+        -45.0f,
         0.0f,
         0.0f
     );
 
 
     const glm::vec3 position2s(
-        -10.0f,
+        -25.0f,
         0.0f,
         0.0f
     );
 
 
-    const glm::vec3 position2px(
+    const glm::vec3 position2pCenter(
         0.0f,
+        0.0f,
+        0.0f
+    );
+
+
+    const glm::vec3 position3s(
+        25.0f,
+        0.0f,
+        0.0f
+    );
+
+
+    const glm::vec3 position3pCenter(
+        50.0f,
+        0.0f,
+        0.0f
+    );
+
+
+    // ========================================================
+    // 9. SEPARACIÓN DE LOS ORBITALES p
+    // ========================================================
+    //
+    // IMPORTANTE:
+    //
+    // Los tres orbitales de cada grupo están separados
+    // SOLAMENTE sobre X.
+    //
+    // Todos permanecen a:
+    //
+    //     Y = 0
+    //     Z = 0
+    //
+    // La separación es deliberadamente grande para
+    // poder distinguir cada orbital individual.
+    //
+    //
+    // 2p:
+    //
+    //     2px       2py       2pz
+    //       ●         ●         ●
+    //      -10        0        +10
+    //
+    //
+    // 3p:
+    //
+    //     3px       3py       3pz
+    //       ●         ●         ●
+    //      40        50        60
+    //
+    // ========================================================
+
+    const float pSpacing = 10.0f;
+
+
+    // ========================================================
+    // 2p
+    // ========================================================
+
+    const glm::vec3 position2px(
+        position2pCenter.x - pSpacing,
         0.0f,
         0.0f
     );
 
 
     const glm::vec3 position2py(
-        10.0f,
+        position2pCenter.x,
         0.0f,
         0.0f
     );
 
 
     const glm::vec3 position2pz(
-        20.0f,
+        position2pCenter.x + pSpacing,
+        0.0f,
+        0.0f
+    );
+
+
+    // ========================================================
+    // 3p
+    // ========================================================
+
+    const glm::vec3 position3px(
+        position3pCenter.x - pSpacing,
+        0.0f,
+        0.0f
+    );
+
+
+    const glm::vec3 position3py(
+        position3pCenter.x,
+        0.0f,
+        0.0f
+    );
+
+
+    const glm::vec3 position3pz(
+        position3pCenter.x + pSpacing,
         0.0f,
         0.0f
     );
@@ -265,6 +347,54 @@ int main()
     );
 
 
+    // --------------------------------------------------------
+    // 3s
+    // --------------------------------------------------------
+
+    Chemistry::AtomicOrbital orbital3s(
+        3,
+        Chemistry::OrbitalType::S,
+        Chemistry::OrbitalOrientation::None,
+        position3s
+    );
+
+
+    // --------------------------------------------------------
+    // 3px
+    // --------------------------------------------------------
+
+    Chemistry::AtomicOrbital orbital3px(
+        3,
+        Chemistry::OrbitalType::P,
+        Chemistry::OrbitalOrientation::X,
+        position3px
+    );
+
+
+    // --------------------------------------------------------
+    // 3py
+    // --------------------------------------------------------
+
+    Chemistry::AtomicOrbital orbital3py(
+        3,
+        Chemistry::OrbitalType::P,
+        Chemistry::OrbitalOrientation::Y,
+        position3py
+    );
+
+
+    // --------------------------------------------------------
+    // 3pz
+    // --------------------------------------------------------
+
+    Chemistry::AtomicOrbital orbital3pz(
+        3,
+        Chemistry::OrbitalType::P,
+        Chemistry::OrbitalOrientation::Z,
+        position3pz
+    );
+
+
     // ========================================================
     // 11. ELECTRON DENSITIES
     // ========================================================
@@ -304,12 +434,40 @@ int main()
     );
 
 
+    Chemistry::ElectronDensity density3s(
+        position3s - densitySize * 0.5f,
+        densitySize,
+        densityResolution
+    );
+
+
+    Chemistry::ElectronDensity density3px(
+        position3px - densitySize * 0.5f,
+        densitySize,
+        densityResolution
+    );
+
+
+    Chemistry::ElectronDensity density3py(
+        position3py - densitySize * 0.5f,
+        densitySize,
+        densityResolution
+    );
+
+
+    Chemistry::ElectronDensity density3pz(
+        position3pz - densitySize * 0.5f,
+        densitySize,
+        densityResolution
+    );
+
+
     // ========================================================
     // 12. GENERAR DENSIDADES
     // ========================================================
 
     std::cout
-        << "Generando densidad electronica...\n";
+        << "Generando densidades electronicas...\n";
 
 
     density1s.generate(
@@ -337,18 +495,32 @@ int main()
     );
 
 
+    density3s.generate(
+        orbital3s
+    );
+
+
+    density3px.generate(
+        orbital3px
+    );
+
+
+    density3py.generate(
+        orbital3py
+    );
+
+
+    density3pz.generate(
+        orbital3pz
+    );
+
+
     std::cout
         << "Densidades generadas.\n";
 
 
     // ========================================================
     // 13. RENDERERS
-    // ========================================================
-    //
-    // Un renderer independiente por orbital.
-    //
-    // Cada uno posee su propio VAO/VBO.
-    //
     // ========================================================
 
     Chemistry::ElectronDensityRenderer renderer1s;
@@ -361,6 +533,14 @@ int main()
 
     Chemistry::ElectronDensityRenderer renderer2pz;
 
+    Chemistry::ElectronDensityRenderer renderer3s;
+
+    Chemistry::ElectronDensityRenderer renderer3px;
+
+    Chemistry::ElectronDensityRenderer renderer3py;
+
+    Chemistry::ElectronDensityRenderer renderer3pz;
+
 
     // ========================================================
     // 14. BUILD GPU
@@ -368,7 +548,7 @@ int main()
     //
     // Se ejecuta UNA SOLA VEZ.
     //
-    // No se vuelve a construir durante el loop.
+    // No reconstruimos los puntos durante cada frame.
     //
     // ========================================================
 
@@ -398,6 +578,26 @@ int main()
 
     renderer2pz.build(
         density2pz
+    );
+
+
+    renderer3s.build(
+        density3s
+    );
+
+
+    renderer3px.build(
+        density3px
+    );
+
+
+    renderer3py.build(
+        density3py
+    );
+
+
+    renderer3pz.build(
+        density3pz
     );
 
 
@@ -475,6 +675,7 @@ int main()
         if (keyboard.shouldClose())
         {
             performance.endUpdate();
+
             performance.endFrame();
 
             break;
@@ -565,6 +766,50 @@ int main()
 
 
         // ====================================================
+        // 3s
+        // ====================================================
+
+        renderer3s.render(
+            density3s,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // 3px
+        // ====================================================
+
+        renderer3px.render(
+            density3px,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // 3py
+        // ====================================================
+
+        renderer3py.render(
+            density3py,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // 3pz
+        // ====================================================
+
+        renderer3pz.render(
+            density3pz,
+            camera,
+            window
+        );
+
+
+        // ====================================================
         // DNA
         // ====================================================
         //
@@ -595,7 +840,7 @@ int main()
 
         // ====================================================
         // END FRAME
-        // ========================================================
+        // ====================================================
 
         performance.endFrame();
     }
