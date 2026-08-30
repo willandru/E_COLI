@@ -1,0 +1,57 @@
+src/
+│
+├── Chemistry/
+│   │
+│   ├── Atom/
+│   │   ├── Atom.h
+│   │   ├── Atom.cpp
+│   │   ├── AtomData.h
+│   │   └── AtomData.cpp
+│   │
+│   ├── Electron/
+│   │   ├── ElectronConfiguration.h
+│   │   ├── ElectronConfiguration.cpp
+│   │   ├── AtomicOrbital.h
+│   │   ├── AtomicOrbital.cpp
+│   │   ├── MolecularOrbital.h
+│   │   ├── MolecularOrbital.cpp
+│   │   ├── ElectronDensity.h
+│   │   └── ElectronDensity.cpp
+│   │
+│   ├── Bond/
+│   │   ├── BondType.h
+│   │   ├── BondData.h
+│   │   ├── BondData.cpp
+│   │   ├── Bond.h
+│   │   └── Bond.cpp
+│   │
+│   ├── Molecule/
+│   │   ├── MoleculeFormula.h
+│   │   ├── MoleculeFormula.cpp
+│   │   ├── Molecule.h
+│   │   └── Molecule.cpp
+│   │
+│   ├── Geometry/
+│   │   ├── Hybridization.h
+│   │   ├── VSEPR.h
+│   │   ├── MolecularGeometry.h
+│   │   └── MolecularGeometry.cpp
+│   │
+│   └── Physics/
+│       ├── MolecularEnergy.h
+│       ├── MolecularEnergy.cpp
+│       ├── GeometryOptimizer.h
+│       └── GeometryOptimizer.cpp
+│
+└── Rendering/
+    │
+    ├── AtomRenderer.h
+    ├── AtomRenderer.cpp
+    ├── BondRenderer.h
+    ├── BondRenderer.cpp
+    ├── OrbitalRenderer.h
+    ├── OrbitalRenderer.cpp
+    ├── MolecularOrbitalRenderer.h
+    ├── MolecularOrbitalRenderer.cpp
+    ├── ElectronDensityRenderer.h
+    └── ElectronDensityRenderer.cpp

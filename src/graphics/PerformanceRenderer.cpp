@@ -13,7 +13,7 @@
 
 
 // ============================================================
-// VERTEX SHADER
+// TEXT VERTEX SHADER
 // ============================================================
 
 static const char* TEXT_VERTEX_SHADER = R"(
@@ -44,7 +44,7 @@ void main()
 
 
 // ============================================================
-// FRAGMENT SHADER
+// TEXT FRAGMENT SHADER
 // ============================================================
 
 static const char* TEXT_FRAGMENT_SHADER = R"(
@@ -98,25 +98,12 @@ PerformanceRenderer::PerformanceRenderer(
 
       m_dna(dna)
 {
-    // ========================================================
-    // SHADER
-    // ========================================================
-
     initializeShader();
-
-
-    // ========================================================
-    // FONT
-    // ========================================================
 
     initializeFont(
         fontPath
     );
 
-
-    // ========================================================
-    // VAO
-    // ========================================================
 
     glGenVertexArrays(
         1,
@@ -175,29 +162,28 @@ PerformanceRenderer::PerformanceRenderer(
     );
 
 
-    // ========================================================
-    // UNIFORMS
-    // ========================================================
-
-    m_projectionLocation =
-        glGetUniformLocation(
-            m_shaderProgram,
-            "projection"
-        );
+    if (m_shaderProgram != 0)
+    {
+        m_projectionLocation =
+            glGetUniformLocation(
+                m_shaderProgram,
+                "projection"
+            );
 
 
-    m_textColorLocation =
-        glGetUniformLocation(
-            m_shaderProgram,
-            "textColor"
-        );
+        m_textColorLocation =
+            glGetUniformLocation(
+                m_shaderProgram,
+                "textColor"
+            );
 
 
-    m_textSamplerLocation =
-        glGetUniformLocation(
-            m_shaderProgram,
-            "text"
-        );
+        m_textSamplerLocation =
+            glGetUniformLocation(
+                m_shaderProgram,
+                "text"
+            );
+    }
 }
 
 
@@ -209,28 +195,40 @@ PerformanceRenderer::~PerformanceRenderer()
 {
     for (const auto& pair : m_characters)
     {
-        glDeleteTextures(
+        if (pair.second.textureID != 0)
+        {
+            glDeleteTextures(
+                1,
+                &pair.second.textureID
+            );
+        }
+    }
+
+
+    if (m_VBO != 0)
+    {
+        glDeleteBuffers(
             1,
-            &pair.second.textureID
+            &m_VBO
         );
     }
 
 
-    glDeleteBuffers(
-        1,
-        &m_VBO
-    );
+    if (m_VAO != 0)
+    {
+        glDeleteVertexArrays(
+            1,
+            &m_VAO
+        );
+    }
 
 
-    glDeleteVertexArrays(
-        1,
-        &m_VAO
-    );
-
-
-    glDeleteProgram(
-        m_shaderProgram
-    );
+    if (m_shaderProgram != 0)
+    {
+        glDeleteProgram(
+            m_shaderProgram
+        );
+    }
 }
 
 
@@ -240,11 +238,7 @@ PerformanceRenderer::~PerformanceRenderer()
 
 void PerformanceRenderer::initializeShader()
 {
-    // ========================================================
-    // VERTEX
-    // ========================================================
-
-    unsigned int vertexShader =
+    const unsigned int vertexShader =
         glCreateShader(
             GL_VERTEX_SHADER
         );
@@ -263,11 +257,43 @@ void PerformanceRenderer::initializeShader()
     );
 
 
-    // ========================================================
-    // FRAGMENT
-    // ========================================================
+    int success = 0;
 
-    unsigned int fragmentShader =
+    char infoLog[1024];
+
+
+    glGetShaderiv(
+        vertexShader,
+        GL_COMPILE_STATUS,
+        &success
+    );
+
+
+    if (!success)
+    {
+        glGetShaderInfoLog(
+            vertexShader,
+            1024,
+            nullptr,
+            infoLog
+        );
+
+
+        std::cerr
+            << "Error compilando Performance vertex shader:\n"
+            << infoLog
+            << '\n';
+
+
+        glDeleteShader(
+            vertexShader
+        );
+
+        return;
+    }
+
+
+    const unsigned int fragmentShader =
         glCreateShader(
             GL_FRAGMENT_SHADER
         );
@@ -286,9 +312,41 @@ void PerformanceRenderer::initializeShader()
     );
 
 
-    // ========================================================
-    // PROGRAM
-    // ========================================================
+    glGetShaderiv(
+        fragmentShader,
+        GL_COMPILE_STATUS,
+        &success
+    );
+
+
+    if (!success)
+    {
+        glGetShaderInfoLog(
+            fragmentShader,
+            1024,
+            nullptr,
+            infoLog
+        );
+
+
+        std::cerr
+            << "Error compilando Performance fragment shader:\n"
+            << infoLog
+            << '\n';
+
+
+        glDeleteShader(
+            vertexShader
+        );
+
+
+        glDeleteShader(
+            fragmentShader
+        );
+
+        return;
+    }
+
 
     m_shaderProgram =
         glCreateProgram();
@@ -311,9 +369,37 @@ void PerformanceRenderer::initializeShader()
     );
 
 
-    // ========================================================
-    // CLEANUP
-    // ========================================================
+    glGetProgramiv(
+        m_shaderProgram,
+        GL_LINK_STATUS,
+        &success
+    );
+
+
+    if (!success)
+    {
+        glGetProgramInfoLog(
+            m_shaderProgram,
+            1024,
+            nullptr,
+            infoLog
+        );
+
+
+        std::cerr
+            << "Error enlazando Performance shader:\n"
+            << infoLog
+            << '\n';
+
+
+        glDeleteProgram(
+            m_shaderProgram
+        );
+
+
+        m_shaderProgram = 0;
+    }
+
 
     glDeleteShader(
         vertexShader
@@ -359,7 +445,7 @@ void PerformanceRenderer::initializeFont(
     ))
     {
         std::cerr
-            << "Error: no se pudo cargar la fuente: "
+            << "Error: no se pudo cargar la fuente:\n"
             << fontPath
             << '\n';
 
@@ -372,10 +458,6 @@ void PerformanceRenderer::initializeFont(
     }
 
 
-    // ========================================================
-    // FONT SIZE
-    // ========================================================
-
     FT_Set_Pixel_Sizes(
         face,
         0,
@@ -383,19 +465,11 @@ void PerformanceRenderer::initializeFont(
     );
 
 
-    // ========================================================
-    // ALPHA
-    // ========================================================
-
     glPixelStorei(
         GL_UNPACK_ALIGNMENT,
         1
     );
 
-
-    // ========================================================
-    // ASCII
-    // ========================================================
 
     for (unsigned char c = 0; c < 128; ++c)
     {
@@ -409,7 +483,7 @@ void PerformanceRenderer::initializeFont(
         }
 
 
-        unsigned int texture;
+        unsigned int texture = 0;
 
 
         glGenTextures(
@@ -526,14 +600,22 @@ void PerformanceRenderer::render(
 )
 {
     if (!m_visible)
+    {
         return;
+    }
 
 
-    // ========================================================
-    // SAVE DEPTH
-    // ========================================================
+    if (m_shaderProgram == 0)
+    {
+        return;
+    }
 
-    GLboolean depthTestEnabled = GL_FALSE;
+
+    GLboolean depthTestEnabled =
+        GL_FALSE;
+
+    GLboolean blendEnabled =
+        GL_FALSE;
 
 
     glGetBooleanv(
@@ -542,14 +624,16 @@ void PerformanceRenderer::render(
     );
 
 
+    glGetBooleanv(
+        GL_BLEND,
+        &blendEnabled
+    );
+
+
     glDisable(
         GL_DEPTH_TEST
     );
 
-
-    // ========================================================
-    // BLENDING
-    // ========================================================
 
     glEnable(
         GL_BLEND
@@ -562,11 +646,7 @@ void PerformanceRenderer::render(
     );
 
 
-    // ========================================================
-    // PROJECTION
-    // ========================================================
-
-    glm::mat4 projection =
+    const glm::mat4 projection =
         glm::ortho(
             0.0f,
             static_cast<float>(
@@ -579,10 +659,6 @@ void PerformanceRenderer::render(
         );
 
 
-    // ========================================================
-    // SHADER
-    // ========================================================
-
     glUseProgram(
         m_shaderProgram
     );
@@ -593,14 +669,6 @@ void PerformanceRenderer::render(
         1,
         GL_FALSE,
         &projection[0][0]
-    );
-
-
-    glUniform3f(
-        m_textColorLocation,
-        0.85f,
-        0.90f,
-        0.95f
     );
 
 
@@ -620,6 +688,13 @@ void PerformanceRenderer::render(
     );
 
 
+    const glm::vec3 color(
+        0.85f,
+        0.90f,
+        0.95f
+    );
+
+
     // ========================================================
     // DNA INFORMATION
     // ========================================================
@@ -628,14 +703,16 @@ void PerformanceRenderer::render(
         m_dna.getLength();
 
 
-    double dnaMbp =
-        static_cast<double>(dnaBases) /
-        1'000'000.0;
+    const double dnaMbp =
+        static_cast<double>(
+            dnaBases
+        ) / 1'000'000.0;
 
 
-    double dnaGpuMB =
-        static_cast<double>(dnaBases) /
-        (1024.0 * 1024.0);
+    const double dnaGpuMB =
+        static_cast<double>(
+            dnaBases
+        ) / (1024.0 * 1024.0);
 
 
     // ========================================================
@@ -644,23 +721,21 @@ void PerformanceRenderer::render(
 
     std::ostringstream fpsText;
 
-
     fpsText
-        << "FPS       "
+        << "FPS        "
         << std::fixed
         << std::setprecision(1)
         << performance.getFPS();
 
 
     // ========================================================
-    // FRAME
+    // FRAME TIME
     // ========================================================
 
     std::ostringstream frameText;
 
-
     frameText
-        << "Frame     "
+        << "Frame      "
         << std::fixed
         << std::setprecision(2)
         << performance.getFrameTime()
@@ -668,14 +743,13 @@ void PerformanceRenderer::render(
 
 
     // ========================================================
-    // UPDATE
+    // UPDATE TIME
     // ========================================================
 
     std::ostringstream updateText;
 
-
     updateText
-        << "Update    "
+        << "Update     "
         << std::fixed
         << std::setprecision(2)
         << performance.getUpdateTime()
@@ -683,15 +757,10 @@ void PerformanceRenderer::render(
 
 
     // ========================================================
-    // RENDER CPU
-    //
-    // IMPORTANTE:
-    // No llamamos esta variable "renderText"
-    // porque ya existe el método renderText().
+    // RENDER TIME
     // ========================================================
 
     std::ostringstream renderCpuText;
-
 
     renderCpuText
         << "Render CPU "
@@ -707,9 +776,8 @@ void PerformanceRenderer::render(
 
     std::ostringstream ramText;
 
-
     ramText
-        << "RAM       "
+        << "RAM        "
         << std::fixed
         << std::setprecision(1)
         << performance.getMemoryMB()
@@ -722,22 +790,20 @@ void PerformanceRenderer::render(
 
     std::ostringstream basesText;
 
-
     basesText
-        << "DNA       "
+        << "DNA        "
         << dnaBases
         << " bp";
 
 
     // ========================================================
-    // DNA SIZE
+    // DNA MBP
     // ========================================================
 
     std::ostringstream mbpText;
 
-
     mbpText
-        << "DNA       "
+        << "DNA        "
         << std::fixed
         << std::setprecision(3)
         << dnaMbp
@@ -745,14 +811,13 @@ void PerformanceRenderer::render(
 
 
     // ========================================================
-    // GPU BUFFER
+    // DNA GPU MEMORY
     // ========================================================
 
     std::ostringstream gpuText;
 
-
     gpuText
-        << "DNA GPU   "
+        << "DNA GPU    "
         << std::fixed
         << std::setprecision(2)
         << dnaGpuMB
@@ -763,7 +828,8 @@ void PerformanceRenderer::render(
     // POSITION
     // ========================================================
 
-    float x = 20.0f;
+    const float x =
+        20.0f;
 
 
     float y =
@@ -772,14 +838,8 @@ void PerformanceRenderer::render(
         ) - 28.0f;
 
 
-    const float lineHeight = 21.0f;
-
-
-    const glm::vec3 color(
-        0.85f,
-        0.90f,
-        0.95f
-    );
+    const float lineHeight =
+        21.0f;
 
 
     // ========================================================
@@ -879,10 +939,6 @@ void PerformanceRenderer::render(
     );
 
 
-    // ========================================================
-    // CLEANUP
-    // ========================================================
-
     glBindVertexArray(
         0
     );
@@ -899,21 +955,32 @@ void PerformanceRenderer::render(
     );
 
 
-    // ========================================================
-    // RESTORE DEPTH
-    // ========================================================
-
     if (depthTestEnabled)
     {
         glEnable(
             GL_DEPTH_TEST
         );
     }
+    else
+    {
+        glDisable(
+            GL_DEPTH_TEST
+        );
+    }
 
 
-    glDisable(
-        GL_BLEND
-    );
+    if (blendEnabled)
+    {
+        glEnable(
+            GL_BLEND
+        );
+    }
+    else
+    {
+        glDisable(
+            GL_BLEND
+        );
+    }
 }
 
 
@@ -929,6 +996,12 @@ void PerformanceRenderer::renderText(
     const glm::vec3& color
 )
 {
+    if (m_shaderProgram == 0)
+    {
+        return;
+    }
+
+
     glUniform3f(
         m_textColorLocation,
         color.x,
@@ -939,7 +1012,7 @@ void PerformanceRenderer::renderText(
 
     for (const char c : text)
     {
-        auto iterator =
+        const auto iterator =
             m_characters.find(c);
 
 
@@ -954,32 +1027,38 @@ void PerformanceRenderer::renderText(
             iterator->second;
 
 
-        float xpos =
+        const float xpos =
             x +
-            character.bearing.x *
+            static_cast<float>(
+                character.bearing.x
+            ) *
             scale;
 
 
-        float ypos =
+        const float ypos =
             y -
-            (
+            static_cast<float>(
                 character.size.y -
                 character.bearing.y
             ) *
             scale;
 
 
-        float width =
-            character.size.x *
+        const float width =
+            static_cast<float>(
+                character.size.x
+            ) *
             scale;
 
 
-        float height =
-            character.size.y *
+        const float height =
+            static_cast<float>(
+                character.size.y
+            ) *
             scale;
 
 
-        float vertices[6][4] =
+        const float vertices[6][4] =
         {
             {
                 xpos,
@@ -1045,12 +1124,6 @@ void PerformanceRenderer::renderText(
         );
 
 
-        glBindBuffer(
-            GL_ARRAY_BUFFER,
-            0
-        );
-
-
         glDrawArrays(
             GL_TRIANGLES,
             0,
@@ -1064,6 +1137,12 @@ void PerformanceRenderer::renderText(
             ) *
             scale;
     }
+
+
+    glBindBuffer(
+        GL_ARRAY_BUFFER,
+        0
+    );
 }
 
 

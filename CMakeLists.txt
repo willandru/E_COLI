@@ -94,12 +94,13 @@ add_executable(E_COLI
 # INCLUDE DIRECTORIES
 # ============================================================
 
-file(GLOB PROJECT_INCLUDE_DIRS
+file(GLOB_RECURSE PROJECT_INCLUDE_DIRS
 
     LIST_DIRECTORIES true
 
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*"
 )
+
 
 target_include_directories(E_COLI PRIVATE
 
