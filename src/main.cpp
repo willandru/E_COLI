@@ -5,10 +5,30 @@
 #include "Timer1.h"
 #include "Performance.h"
 #include "PerformanceRenderer.h"
+
 #include "Grid.h"
 #include "GridRenderer.h"
 
 #include "DNA.h"
+
+// ============================================================
+// ATOMS
+// ============================================================
+
+#include "Atom.h"
+#include "AtomData.h"
+#include "AtomRenderer.h"
+
+// ============================================================
+// BONDS
+// ============================================================
+
+#include "Bond.h"
+#include "BondRenderer.h"
+
+// ============================================================
+// CHEMISTRY
+// ============================================================
 
 #include "ElectronConfiguration.h"
 #include "AtomicOrbital.h"
@@ -100,13 +120,6 @@ int main()
     // ========================================================
     // 6. DNA
     // ========================================================
-    //
-    // Se mantiene cargado porque PerformanceRenderer
-    // lo utiliza.
-    //
-    // NO se renderiza.
-    //
-    // ========================================================
 
     DNA dna(
         "../data/ncbi_dataset/"
@@ -126,7 +139,92 @@ int main()
 
 
     // ========================================================
-    // 7. CONFIGURACIÓN ESPACIAL
+    // 7. ATOMS
+    // ========================================================
+    //
+    // Atom:
+    //
+    //     Atom(
+    //         const AtomData& data,
+    //         const glm::vec3& position
+    //     );
+    //
+    // Por lo tanto primero pasamos Carbon y luego posición.
+    //
+    // ========================================================
+
+    Chemistry::Atom atomA(
+        Chemistry::Carbon,
+        glm::vec3(
+            -5.0f,
+            0.0f,
+            0.0f
+        )
+    );
+
+
+    Chemistry::Atom atomB(
+        Chemistry::Carbon,
+        glm::vec3(
+            5.0f,
+            0.0f,
+            0.0f
+        )
+    );
+
+
+    // ========================================================
+    // 8. ATOM RENDERER
+    // ========================================================
+    //
+    // AtomRenderer está en el namespace global.
+    //
+    // NO:
+    //
+    //     Chemistry::AtomRenderer
+    //
+    // ========================================================
+
+    AtomRenderer atomRenderer;
+
+
+    // ========================================================
+    // 9. BOND
+    // ========================================================
+    //
+    // Bond utiliza los objetos Atom.
+    //
+    // El BondRenderer posteriormente hace:
+    //
+    //     bond.getAtomA()
+    //     bond.getAtomB()
+    //
+    // ========================================================
+
+    Chemistry::Bond bond(
+        atomA,
+        atomB,
+        Chemistry::BondType::Single
+    );
+
+
+    // ========================================================
+    // 10. BOND RENDERER
+    // ========================================================
+    //
+    // El constructor ya crea la geometría del cilindro.
+    //
+    // NO existe:
+    //
+    //     bondRenderer.build();
+    //
+    // ========================================================
+
+    Chemistry::BondRenderer bondRenderer;
+
+
+    // ========================================================
+    // 11. CONFIGURACIÓN ESPACIAL
     // ========================================================
 
     const glm::vec3 densitySize(
@@ -144,22 +242,7 @@ int main()
 
 
     // ========================================================
-    // 8. CENTROS DE LOS GRUPOS
-    // ========================================================
-    //
-    // Todos los orbitales permanecen a:
-    //
-    //     Y = 0
-    //     Z = 0
-    //
-    // Los grupos se distribuyen sobre X:
-    //
-    //
-    //       1s       2s        2p        3s        3p
-    //
-    //        ●        ●       ● ● ●       ●       ● ● ●
-    //
-    //
+    // 12. CENTROS DE LOS ORBITALES
     // ========================================================
 
     const glm::vec3 position1s(
@@ -198,36 +281,7 @@ int main()
 
 
     // ========================================================
-    // 9. SEPARACIÓN DE LOS ORBITALES p
-    // ========================================================
-    //
-    // IMPORTANTE:
-    //
-    // Los tres orbitales de cada grupo están separados
-    // SOLAMENTE sobre X.
-    //
-    // Todos permanecen a:
-    //
-    //     Y = 0
-    //     Z = 0
-    //
-    // La separación es deliberadamente grande para
-    // poder distinguir cada orbital individual.
-    //
-    //
-    // 2p:
-    //
-    //     2px       2py       2pz
-    //       ●         ●         ●
-    //      -10        0        +10
-    //
-    //
-    // 3p:
-    //
-    //     3px       3py       3pz
-    //       ●         ●         ●
-    //      40        50        60
-    //
+    // 13. SEPARACIÓN ORBITALES p
     // ========================================================
 
     const float pSpacing = 10.0f;
@@ -284,12 +338,8 @@ int main()
 
 
     // ========================================================
-    // 10. ATOMIC ORBITALS
+    // 14. ATOMIC ORBITALS
     // ========================================================
-
-    // --------------------------------------------------------
-    // 1s
-    // --------------------------------------------------------
 
     Chemistry::AtomicOrbital orbital1s(
         1,
@@ -299,10 +349,6 @@ int main()
     );
 
 
-    // --------------------------------------------------------
-    // 2s
-    // --------------------------------------------------------
-
     Chemistry::AtomicOrbital orbital2s(
         2,
         Chemistry::OrbitalType::S,
@@ -310,10 +356,6 @@ int main()
         position2s
     );
 
-
-    // --------------------------------------------------------
-    // 2px
-    // --------------------------------------------------------
 
     Chemistry::AtomicOrbital orbital2px(
         2,
@@ -323,10 +365,6 @@ int main()
     );
 
 
-    // --------------------------------------------------------
-    // 2py
-    // --------------------------------------------------------
-
     Chemistry::AtomicOrbital orbital2py(
         2,
         Chemistry::OrbitalType::P,
@@ -334,10 +372,6 @@ int main()
         position2py
     );
 
-
-    // --------------------------------------------------------
-    // 2pz
-    // --------------------------------------------------------
 
     Chemistry::AtomicOrbital orbital2pz(
         2,
@@ -347,10 +381,6 @@ int main()
     );
 
 
-    // --------------------------------------------------------
-    // 3s
-    // --------------------------------------------------------
-
     Chemistry::AtomicOrbital orbital3s(
         3,
         Chemistry::OrbitalType::S,
@@ -358,10 +388,6 @@ int main()
         position3s
     );
 
-
-    // --------------------------------------------------------
-    // 3px
-    // --------------------------------------------------------
 
     Chemistry::AtomicOrbital orbital3px(
         3,
@@ -371,10 +397,6 @@ int main()
     );
 
 
-    // --------------------------------------------------------
-    // 3py
-    // --------------------------------------------------------
-
     Chemistry::AtomicOrbital orbital3py(
         3,
         Chemistry::OrbitalType::P,
@@ -382,10 +404,6 @@ int main()
         position3py
     );
 
-
-    // --------------------------------------------------------
-    // 3pz
-    // --------------------------------------------------------
 
     Chemistry::AtomicOrbital orbital3pz(
         3,
@@ -396,7 +414,7 @@ int main()
 
 
     // ========================================================
-    // 11. ELECTRON DENSITIES
+    // 15. ELECTRON DENSITIES
     // ========================================================
 
     Chemistry::ElectronDensity density1s(
@@ -463,7 +481,7 @@ int main()
 
 
     // ========================================================
-    // 12. GENERAR DENSIDADES
+    // 16. GENERAR DENSIDADES
     // ========================================================
 
     std::cout
@@ -520,7 +538,7 @@ int main()
 
 
     // ========================================================
-    // 13. RENDERERS
+    // 17. RENDERERS DE DENSIDAD
     // ========================================================
 
     Chemistry::ElectronDensityRenderer renderer1s;
@@ -543,13 +561,7 @@ int main()
 
 
     // ========================================================
-    // 14. BUILD GPU
-    // ========================================================
-    //
-    // Se ejecuta UNA SOLA VEZ.
-    //
-    // No reconstruimos los puntos durante cada frame.
-    //
+    // 18. BUILD GPU
     // ========================================================
 
     std::cout
@@ -606,7 +618,7 @@ int main()
 
 
     // ========================================================
-    // 15. PERFORMANCE RENDERER
+    // 19. PERFORMANCE RENDERER
     // ========================================================
 
     PerformanceRenderer performanceRenderer(
@@ -616,7 +628,7 @@ int main()
 
 
     // ========================================================
-    // 16. MAIN LOOP
+    // 20. MAIN LOOP
     // ========================================================
 
     while (!window.shouldClose())
@@ -705,6 +717,39 @@ int main()
 
         gridRenderer.render(
             grid,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // BOND
+        // ====================================================
+
+        bondRenderer.render(
+            bond,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // ATOM A
+        // ====================================================
+
+        atomRenderer.render(
+            atomA,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // ATOM B
+        // ====================================================
+
+        atomRenderer.render(
+            atomB,
             camera,
             window
         );
@@ -813,7 +858,7 @@ int main()
         // DNA
         // ====================================================
         //
-        // NO SE RENDERIZA.
+        // Todavía no se renderiza.
         //
         // ====================================================
 
