@@ -11,6 +11,9 @@
 
 #include "DNA.h"
 
+#include "Nucleus.h"
+#include "NucleusRenderer.h"
+
 #include <iostream>
 
 
@@ -115,7 +118,38 @@ int main()
 
 
     // ========================================================
-    // 7. PERFORMANCE RENDERER
+    // 7. NUCLEUS
+    // ========================================================
+    //
+    // Carbono-12:
+    //
+    //     6 protones
+    //     6 neutrones
+    //
+    // Total:
+    //
+    //     12 nucleones
+    //
+    // Los electrones todavía no forman parte del modelo
+    // visual del átomo.
+    //
+    // ========================================================
+
+    Chemistry::Nucleus nucleus(
+        6,
+        6
+    );
+
+
+    // ========================================================
+    // 8. NUCLEUS RENDERER
+    // ========================================================
+
+    NucleusRenderer nucleusRenderer;
+
+
+    // ========================================================
+    // 9. PERFORMANCE RENDERER
     // ========================================================
 
     PerformanceRenderer performanceRenderer(
@@ -125,7 +159,7 @@ int main()
 
 
     // ========================================================
-    // 8. MAIN LOOP
+    // 10. MAIN LOOP
     // ========================================================
 
     while (!window.shouldClose())
@@ -214,6 +248,17 @@ int main()
 
         gridRenderer.render(
             grid,
+            camera,
+            window
+        );
+
+
+        // ----------------------------------------------------
+        // NUCLEUS
+        // ----------------------------------------------------
+
+        nucleusRenderer.render(
+            nucleus,
             camera,
             window
         );
