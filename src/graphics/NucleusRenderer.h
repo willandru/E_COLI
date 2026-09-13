@@ -22,6 +22,7 @@ public:
 
     void render(
         const Chemistry::Nucleus& nucleus,
+        const glm::vec3& position,
         const Camera& camera,
         const Window& window
     );

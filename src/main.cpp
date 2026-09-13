@@ -11,20 +11,20 @@
 
 #include "DNA.h"
 
-#include "Nucleus.h"
+#include "Atom.h"
+
 #include "NucleusRenderer.h"
+#include "ElectronicRenderer.h"
+
+#include <glm/glm.hpp>
 
 #include <iostream>
 
 
-// ============================================================
-// MAIN
-// ============================================================
-
 int main()
 {
     // ========================================================
-    // 1. WINDOW
+    // WINDOW
     // ========================================================
 
     Window window(
@@ -48,34 +48,29 @@ int main()
 
 
     // ========================================================
-    // 2. CAMERA
+    // CAMERA
     // ========================================================
 
     Camera camera(
         glm::vec3(
             0.0f,
             3.0f,
-            10.0f
+            22.0f
         )
     );
 
 
     // ========================================================
-    // 3. INPUT
+    // INPUT
     // ========================================================
 
-    InputMouse mouse(
-        nativeWindow
-    );
+    InputMouse mouse(nativeWindow);
 
-
-    InputKeyboard keyboard(
-        nativeWindow
-    );
+    InputKeyboard keyboard(nativeWindow);
 
 
     // ========================================================
-    // 4. TIME / PERFORMANCE
+    // CORE
     // ========================================================
 
     Timer1 timer;
@@ -84,7 +79,7 @@ int main()
 
 
     // ========================================================
-    // 5. WORLD
+    // GRID
     // ========================================================
 
     Grid grid(
@@ -92,12 +87,11 @@ int main()
         20
     );
 
-
     GridRenderer gridRenderer;
 
 
     // ========================================================
-    // 6. DNA
+    // DNA
     // ========================================================
 
     DNA dna(
@@ -118,38 +112,162 @@ int main()
 
 
     // ========================================================
-    // 7. NUCLEUS
-    // ========================================================
-    //
-    // Carbono-12:
-    //
-    //     6 protones
-    //     6 neutrones
-    //
-    // Total:
-    //
-    //     12 nucleones
-    //
-    // Los electrones todavía no forman parte del modelo
-    // visual del átomo.
-    //
+    // ATOMS
     // ========================================================
 
-    Chemistry::Nucleus nucleus(
+    Chemistry::Atom hydrogen(
+        1,
+        0
+    );
+
+    Chemistry::Atom helium(
+        2,
+        2
+    );
+
+    Chemistry::Atom lithium(
+        3,
+        4
+    );
+
+    Chemistry::Atom beryllium(
+        4,
+        5
+    );
+
+    Chemistry::Atom boron(
+        5,
+        6
+    );
+
+    Chemistry::Atom carbon(
         6,
         6
     );
 
+    Chemistry::Atom nitrogen(
+        7,
+        7
+    );
+
+    Chemistry::Atom oxygen(
+        8,
+        8
+    );
+
+    Chemistry::Atom fluorine(
+        9,
+        10
+    );
+
+    Chemistry::Atom neon(
+        10,
+        10
+    );
+
 
     // ========================================================
-    // 8. NUCLEUS RENDERER
+    // ATOM POSITIONS
+    // ========================================================
+
+    const glm::vec3 hydrogenPosition(
+        -9.0f,
+        0.0f,
+        0.0f
+    );
+
+    const glm::vec3 heliumPosition(
+        -7.0f,
+        0.0f,
+        0.0f
+    );
+
+    const glm::vec3 lithiumPosition(
+        -5.0f,
+        0.0f,
+        0.0f
+    );
+
+    const glm::vec3 berylliumPosition(
+        -3.0f,
+        0.0f,
+        0.0f
+    );
+
+    const glm::vec3 boronPosition(
+        -1.0f,
+        0.0f,
+        0.0f
+    );
+
+    const glm::vec3 carbonPosition(
+        1.0f,
+        0.0f,
+        0.0f
+    );
+
+    const glm::vec3 nitrogenPosition(
+        3.0f,
+        0.0f,
+        0.0f
+    );
+
+    const glm::vec3 oxygenPosition(
+        5.0f,
+        0.0f,
+        0.0f
+    );
+
+    const glm::vec3 fluorinePosition(
+        7.0f,
+        0.0f,
+        0.0f
+    );
+
+    const glm::vec3 neonPosition(
+        9.0f,
+        0.0f,
+        0.0f
+    );
+
+
+    // ========================================================
+    // NUCLEUS RENDERER
     // ========================================================
 
     NucleusRenderer nucleusRenderer;
 
 
     // ========================================================
-    // 9. PERFORMANCE RENDERER
+    // ELECTRONIC RENDERERS
+    //
+    // Cada átomo tiene su propio ElectronicRenderer porque
+    // cada uno posee una estructura electrónica diferente.
+    // ========================================================
+
+    ElectronicRenderer hydrogenElectronicRenderer;
+
+    ElectronicRenderer heliumElectronicRenderer;
+
+    ElectronicRenderer lithiumElectronicRenderer;
+
+    ElectronicRenderer berylliumElectronicRenderer;
+
+    ElectronicRenderer boronElectronicRenderer;
+
+    ElectronicRenderer carbonElectronicRenderer;
+
+    ElectronicRenderer nitrogenElectronicRenderer;
+
+    ElectronicRenderer oxygenElectronicRenderer;
+
+    ElectronicRenderer fluorineElectronicRenderer;
+
+    ElectronicRenderer neonElectronicRenderer;
+
+
+    // ========================================================
+    // PERFORMANCE
     // ========================================================
 
     PerformanceRenderer performanceRenderer(
@@ -159,24 +277,23 @@ int main()
 
 
     // ========================================================
-    // 10. MAIN LOOP
+    // MAIN LOOP
     // ========================================================
 
     while (!window.shouldClose())
     {
         // ====================================================
-        // BEGIN FRAME
+        // FRAME
         // ====================================================
 
         performance.beginFrame();
 
 
         // ====================================================
-        // TIME
+        // TIMER
         // ====================================================
 
         timer.update();
-
 
         const float deltaTime =
             timer.getDeltaTime();
@@ -189,10 +306,6 @@ int main()
         performance.beginUpdate();
 
 
-        // ----------------------------------------------------
-        // INPUT
-        // ----------------------------------------------------
-
         mouse.update();
 
         keyboard.update();
@@ -200,20 +313,12 @@ int main()
         window.processEvents();
 
 
-        // ----------------------------------------------------
-        // CAMERA
-        // ----------------------------------------------------
-
         camera.update(
             keyboard,
             mouse,
             deltaTime
         );
 
-
-        // ----------------------------------------------------
-        // ESC
-        // ----------------------------------------------------
 
         if (keyboard.shouldClose())
         {
@@ -235,16 +340,12 @@ int main()
         performance.beginRender();
 
 
-        // ----------------------------------------------------
-        // CLEAR
-        // ----------------------------------------------------
-
         window.clear();
 
 
-        // ----------------------------------------------------
+        // ====================================================
         // GRID
-        // ----------------------------------------------------
+        // ====================================================
 
         gridRenderer.render(
             grid,
@@ -253,32 +354,205 @@ int main()
         );
 
 
-        // ----------------------------------------------------
-        // NUCLEUS
-        // ----------------------------------------------------
+        // ====================================================
+        // HYDROGEN
+        // ====================================================
 
         nucleusRenderer.render(
-            nucleus,
+            hydrogen.getNucleus(),
+            hydrogenPosition,
+            camera,
+            window
+        );
+
+        hydrogenElectronicRenderer.render(
+            hydrogen.getElectronicStructure(),
+            hydrogenPosition,
             camera,
             window
         );
 
 
-        // ----------------------------------------------------
-        // DNA
-        // ----------------------------------------------------
-        //
-        // El DNA continúa cargado para el sistema de
-        // información/performance, pero todavía no se renderiza.
-        //
-        // ----------------------------------------------------
+        // ====================================================
+        // HELIUM
+        // ====================================================
 
+        nucleusRenderer.render(
+            helium.getNucleus(),
+            heliumPosition,
+            camera,
+            window
+        );
+
+        heliumElectronicRenderer.render(
+            helium.getElectronicStructure(),
+            heliumPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // LITHIUM
+        // ====================================================
+
+        nucleusRenderer.render(
+            lithium.getNucleus(),
+            lithiumPosition,
+            camera,
+            window
+        );
+
+        lithiumElectronicRenderer.render(
+            lithium.getElectronicStructure(),
+            lithiumPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // BERYLLIUM
+        // ====================================================
+
+        nucleusRenderer.render(
+            beryllium.getNucleus(),
+            berylliumPosition,
+            camera,
+            window
+        );
+
+        berylliumElectronicRenderer.render(
+            beryllium.getElectronicStructure(),
+            berylliumPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // BORON
+        // ====================================================
+
+        nucleusRenderer.render(
+            boron.getNucleus(),
+            boronPosition,
+            camera,
+            window
+        );
+
+        boronElectronicRenderer.render(
+            boron.getElectronicStructure(),
+            boronPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // CARBON
+        // ====================================================
+
+        nucleusRenderer.render(
+            carbon.getNucleus(),
+            carbonPosition,
+            camera,
+            window
+        );
+
+        carbonElectronicRenderer.render(
+            carbon.getElectronicStructure(),
+            carbonPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // NITROGEN
+        // ====================================================
+
+        nucleusRenderer.render(
+            nitrogen.getNucleus(),
+            nitrogenPosition,
+            camera,
+            window
+        );
+
+        nitrogenElectronicRenderer.render(
+            nitrogen.getElectronicStructure(),
+            nitrogenPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // OXYGEN
+        // ====================================================
+
+        nucleusRenderer.render(
+            oxygen.getNucleus(),
+            oxygenPosition,
+            camera,
+            window
+        );
+
+        oxygenElectronicRenderer.render(
+            oxygen.getElectronicStructure(),
+            oxygenPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // FLUORINE
+        // ====================================================
+
+        nucleusRenderer.render(
+            fluorine.getNucleus(),
+            fluorinePosition,
+            camera,
+            window
+        );
+
+        fluorineElectronicRenderer.render(
+            fluorine.getElectronicStructure(),
+            fluorinePosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // NEON
+        // ====================================================
+
+        nucleusRenderer.render(
+            neon.getNucleus(),
+            neonPosition,
+            camera,
+            window
+        );
+
+        neonElectronicRenderer.render(
+            neon.getElectronicStructure(),
+            neonPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // END RENDER
+        // ====================================================
 
         performance.endRender();
 
 
         // ====================================================
-        // PERFORMANCE OVERLAY
+        // PERFORMANCE UI
         // ====================================================
 
         performanceRenderer.render(
@@ -301,10 +575,6 @@ int main()
         performance.endFrame();
     }
 
-
-    // ========================================================
-    // EXIT
-    // ========================================================
 
     return 0;
 }

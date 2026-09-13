@@ -77,11 +77,8 @@ void NucleusRenderer::createSphere()
         const float phi =
             v * glm::pi<float>();
 
-        const float sinPhi =
-            std::sin(phi);
-
-        const float cosPhi =
-            std::cos(phi);
+        const float sinPhi = std::sin(phi);
+        const float cosPhi = std::cos(phi);
 
 
         for (int segment = 0;
@@ -96,11 +93,8 @@ void NucleusRenderer::createSphere()
             const float theta =
                 u * glm::two_pi<float>();
 
-            const float sinTheta =
-                std::sin(theta);
-
-            const float cosTheta =
-                std::cos(theta);
+            const float sinTheta = std::sin(theta);
+            const float cosTheta = std::cos(theta);
 
 
             glm::vec3 normal(
@@ -268,6 +262,8 @@ void NucleusRenderer::destroySphere()
             1,
             &EBO
         );
+
+        EBO = 0;
     }
 
 
@@ -277,6 +273,8 @@ void NucleusRenderer::destroySphere()
             1,
             &VBO
         );
+
+        VBO = 0;
     }
 
 
@@ -286,6 +284,8 @@ void NucleusRenderer::destroySphere()
             1,
             &VAO
         );
+
+        VAO = 0;
     }
 }
 
@@ -296,6 +296,7 @@ void NucleusRenderer::destroySphere()
 
 void NucleusRenderer::render(
     const Chemistry::Nucleus& nucleus,
+    const glm::vec3& position,
     const Camera& camera,
     const Window& window
 )
@@ -337,7 +338,6 @@ void NucleusRenderer::render(
 
     glBindVertexArray(VAO);
 
-
     constexpr float radius = 0.18f;
 
 
@@ -364,7 +364,7 @@ void NucleusRenderer::render(
         model =
             glm::translate(
                 model,
-                proton.getPosition()
+                position + proton.getPosition()
             );
 
 
@@ -413,7 +413,7 @@ void NucleusRenderer::render(
         model =
             glm::translate(
                 model,
-                neutron.getPosition()
+                position + neutron.getPosition()
             );
 
 
