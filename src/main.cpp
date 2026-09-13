@@ -21,6 +21,23 @@
 #include <iostream>
 
 
+// ============================================================
+// SCENE CONFIGURATION
+// ============================================================
+
+// Distancia entre los centros de los átomos.
+constexpr float ATOM_SPACING = 10.0f;
+
+// Tamaño de la cuadrícula.
+constexpr float GRID_SIZE = 100.0f;
+
+constexpr int GRID_DIVISIONS = 100;
+
+
+// ============================================================
+// MAIN
+// ============================================================
+
 int main()
 {
     // ========================================================
@@ -55,7 +72,7 @@ int main()
         glm::vec3(
             0.0f,
             3.0f,
-            22.0f
+            40.0f
         )
     );
 
@@ -83,8 +100,8 @@ int main()
     // ========================================================
 
     Grid grid(
-        20.0f,
-        20
+        GRID_SIZE,
+        GRID_DIVISIONS
     );
 
     GridRenderer gridRenderer;
@@ -171,61 +188,61 @@ int main()
     // ========================================================
 
     const glm::vec3 hydrogenPosition(
-        -9.0f,
+        -4.5f * ATOM_SPACING,
         0.0f,
         0.0f
     );
 
     const glm::vec3 heliumPosition(
-        -7.0f,
+        -3.5f * ATOM_SPACING,
         0.0f,
         0.0f
     );
 
     const glm::vec3 lithiumPosition(
-        -5.0f,
+        -2.5f * ATOM_SPACING,
         0.0f,
         0.0f
     );
 
     const glm::vec3 berylliumPosition(
-        -3.0f,
+        -1.5f * ATOM_SPACING,
         0.0f,
         0.0f
     );
 
     const glm::vec3 boronPosition(
-        -1.0f,
+        -0.5f * ATOM_SPACING,
         0.0f,
         0.0f
     );
 
     const glm::vec3 carbonPosition(
-        1.0f,
+        0.5f * ATOM_SPACING,
         0.0f,
         0.0f
     );
 
     const glm::vec3 nitrogenPosition(
-        3.0f,
+        1.5f * ATOM_SPACING,
         0.0f,
         0.0f
     );
 
     const glm::vec3 oxygenPosition(
-        5.0f,
+        2.5f * ATOM_SPACING,
         0.0f,
         0.0f
     );
 
     const glm::vec3 fluorinePosition(
-        7.0f,
+        3.5f * ATOM_SPACING,
         0.0f,
         0.0f
     );
 
     const glm::vec3 neonPosition(
-        9.0f,
+        4.5f * ATOM_SPACING,
         0.0f,
         0.0f
     );
@@ -240,9 +257,6 @@ int main()
 
     // ========================================================
     // ELECTRONIC RENDERERS
-    //
-    // Cada átomo tiene su propio ElectronicRenderer porque
-    // cada uno posee una estructura electrónica diferente.
     // ========================================================
 
     ElectronicRenderer hydrogenElectronicRenderer;
