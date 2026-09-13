@@ -1,6 +1,15 @@
 #include "OrbitalGeometry.h"
 
+#include "WaveFunctionS.h"
+#include "RadialProbabilityS.h"
+#include "DensityS.h"
+
+#include <glm/glm.hpp>
+
 #include <cmath>
+#include <vector>
+#include <algorithm>
+
 
 namespace Chemistry
 {
@@ -16,7 +25,9 @@ constexpr float PI =
 // SAFE RESOLUTION
 // ============================================================
 
-int sanitizeResolution(int resolution)
+int sanitizeResolution(
+    int resolution
+)
 {
     if (resolution < 4)
         return 4;
@@ -26,15 +37,79 @@ int sanitizeResolution(int resolution)
 
 
 // ============================================================
+// GENERATE SPHERE
+// ============================================================
+
+void appendSphere(
+    std::vector<glm::vec3>& points,
+    float radius,
+    int resolution
+)
+{
+    const int rings =
+        resolution;
+
+    const int segments =
+        resolution * 2;
+
+
+    for (int i = 0;
+         i <= rings;
+         ++i)
+    {
+        const float phi =
+            PI *
+            static_cast<float>(i) /
+            static_cast<float>(rings);
+
+
+        const float sinPhi =
+            std::sin(phi);
+
+        const float cosPhi =
+            std::cos(phi);
+
+
+        for (int j = 0;
+             j < segments;
+             ++j)
+        {
+            const float theta =
+                2.0f *
+                PI *
+                static_cast<float>(j) /
+                static_cast<float>(segments);
+
+
+            points.emplace_back(
+                radius *
+                    sinPhi *
+                    std::cos(theta),
+
+                radius *
+                    cosPhi,
+
+                radius *
+                    sinPhi *
+                    std::sin(theta)
+            );
+        }
+    }
+}
+
+
+// ============================================================
 // GENERATE P ALONG Y
 // ============================================================
 
-std::vector<glm::vec3> generatePAlongY(
+std::vector<glm::vec3>
+generatePAlongY(
     float scale,
     int resolution
 )
 {
     std::vector<glm::vec3> points;
+
 
     const int rings =
         resolution;
@@ -232,17 +307,24 @@ OrbitalGeometry::generate(
 // GENERATE S
 // ============================================================
 //
-// Aproximación visual:
+// Esta función NO resuelve directamente la ecuación de
+// Schrödinger.
 //
-// 1s -> una región radial
+// Delegamos:
 //
-// 2s -> región interna + región externa
-//       separadas por un nodo radial
+//     WaveFunctionS
+//         -> R_n0(r)
 //
-// 3s -> tres regiones radiales
+//     RadialProbabilityS
+//         -> P(r)
 //
-// El tamaño global aumenta aproximadamente con n².
+//     DensityS
+//         -> |ψ(r)|²
 //
+// De esta manera OrbitalGeometry solamente transforma los
+// resultados físicos en geometría.
+//
+// ============================================================
 
 std::vector<glm::vec3>
 OrbitalGeometry::generateS(
@@ -254,105 +336,128 @@ OrbitalGeometry::generateS(
     std::vector<glm::vec3> points;
 
 
-    const int rings =
-        resolution;
-
-    const int segments =
-        resolution * 2;
-
-
     // ========================================================
-    // ESCALA RADIAL
+    // PARAMETROS FISICOS
     // ========================================================
     //
-    // No es una solución exacta para átomos multielectrónicos.
+    // r está expresado en radios de Bohr:
     //
-    // Se utiliza para producir una representación visual
-    // donde los orbitales de mayor n ocupan una región
-    // espacial mayor.
+    //     a0 = 0.529177 Å
+    //
+    // Posteriormente convertimos:
+    //
+    //     r[a0] -> unidades OpenGL
+    //
+    // mediante "scale".
     //
 
-    const float shellScale =
-        scale *
-        static_cast<float>(n * n);
+    constexpr double Z =
+        1.0;
 
 
     // ========================================================
-    // CADA REGIÓN RADIAL
+    // MAXIMOS DE PROBABILIDAD RADIAL
     // ========================================================
+    //
+    // Estos radios salen de:
+    //
+    //     P(r) = 4πr²|ψ(r)|²
+    //
+    // y NO de posiciones arbitrarias.
+    //
 
-    for (int shell = 0;
-         shell < n;
-         ++shell)
+    const std::vector<double> maxima =
+        RadialProbabilityS::findMaxima(
+            n,
+            Z,
+            12000
+        );
+
+
+    // ========================================================
+    // NODOS
+    // ========================================================
+    //
+    // Los calculamos aquí aunque por ahora no generemos una
+    // geometría específica para el nodo.
+    //
+    // El nodo representa:
+    //
+    //     ψ(r) = 0
+    //
+    // y por tanto:
+    //
+    //     |ψ(r)|² = 0
+    //
+    const std::vector<double> nodes =
+        WaveFunctionS::findNodes(
+            n,
+            Z,
+            12000
+        );
+
+
+    // ========================================================
+    // GENERAR LAS REGIONES DE PROBABILIDAD
+    // ========================================================
+    //
+    // Cada máximo radial se representa visualmente como una
+    // esfera.
+    //
+    // Esto nos permite observar:
+    //
+    // 1s -> 1 región
+    // 2s -> 2 regiones
+    // 3s -> 3 regiones
+    // ...
+    //
+    // separadas por los nodos radiales.
+    //
+
+    for (double radiusBohr : maxima)
     {
-        const float normalized =
-            static_cast<float>(shell + 1) /
-            static_cast<float>(n);
+        const float radius =
+            static_cast<float>(
+                radiusBohr
+            )
+            *
+            scale;
 
 
-        float radius =
-            shellScale *
-            normalized;
-
-
-        // ----------------------------------------------------
-        // Ajuste para que las regiones no crezcan
-        // excesivamente.
-        // ----------------------------------------------------
-
-        radius *=
-            0.65f +
-            0.35f *
-            normalized;
-
-
-        // ----------------------------------------------------
-        // Esfera
-        // ----------------------------------------------------
-
-        for (int i = 0;
-             i <= rings;
-             ++i)
-        {
-            const float phi =
-                PI *
-                static_cast<float>(i) /
-                static_cast<float>(rings);
-
-
-            const float sinPhi =
-                std::sin(phi);
-
-            const float cosPhi =
-                std::cos(phi);
-
-
-            for (int j = 0;
-                 j < segments;
-                 ++j)
-            {
-                const float theta =
-                    2.0f *
-                    PI *
-                    static_cast<float>(j) /
-                    static_cast<float>(segments);
-
-
-                points.emplace_back(
-                    radius *
-                        sinPhi *
-                        std::cos(theta),
-
-                    radius *
-                        cosPhi,
-
-                    radius *
-                        sinPhi *
-                        std::sin(theta)
-                );
-            }
-        }
+        appendSphere(
+            points,
+            radius,
+            resolution
+        );
     }
+
+
+    // ========================================================
+    // NODOS
+    // ========================================================
+    //
+    // Por ahora los nodos no se dibujan como superficies.
+    //
+    // Esto es intencional.
+    //
+    // Un nodo no es una "cáscara" con materia.
+    //
+    // Es una región donde:
+    //
+    //     ψ = 0
+    //
+    // y:
+    //
+    //     |ψ|² = 0
+    //
+    // Posteriormente podemos usar esta información para:
+    //
+    // - generar superficies nodales
+    // - separar fases
+    // - colorear regiones positiva/negativa
+    // - visualizar la función de onda
+    //
+    (void)nodes;
 
 
     return points;
@@ -362,16 +467,6 @@ OrbitalGeometry::generateS(
 // ============================================================
 // GENERATE P
 // ============================================================
-//
-// axis:
-//
-// 0 -> px
-// 1 -> py
-// 2 -> pz
-//
-// Los tres tienen la misma estructura radial,
-// pero distinta orientación espacial.
-//
 
 std::vector<glm::vec3>
 OrbitalGeometry::generateP(
@@ -407,14 +502,13 @@ OrbitalGeometry::generateP(
 
         if (axis == 1)
         {
-            transformed = p;
+            transformed =
+                p;
         }
 
 
         // ----------------------------------------------------
         // px
-        //
-        // Y -> X
         // ----------------------------------------------------
 
         else if (axis == 0)
@@ -430,8 +524,6 @@ OrbitalGeometry::generateP(
 
         // ----------------------------------------------------
         // pz
-        //
-        // Y -> Z
         // ----------------------------------------------------
 
         else
@@ -458,12 +550,6 @@ OrbitalGeometry::generateP(
 // ============================================================
 // GENERATE D
 // ============================================================
-//
-// Representación visual aproximada.
-//
-// Se mantiene una geometría de cuatro lóbulos,
-// pero ahora el tamaño depende de n.
-//
 
 std::vector<glm::vec3>
 OrbitalGeometry::generateD(
@@ -572,9 +658,6 @@ OrbitalGeometry::generateD(
 // ============================================================
 // GENERATE F
 // ============================================================
-//
-// Aproximación visual de mayor complejidad.
-//
 
 std::vector<glm::vec3>
 OrbitalGeometry::generateF(
@@ -636,8 +719,12 @@ OrbitalGeometry::generateF(
 
             const float radius =
                 orbitalScale *
-                (0.25f +
-                 0.75f * angular) *
+                (
+                    0.25f +
+                    0.75f *
+                    angular
+                )
+                *
                 sinPhi;
 
 

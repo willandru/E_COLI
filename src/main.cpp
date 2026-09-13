@@ -25,8 +25,11 @@
 // SCENE CONFIGURATION
 // ============================================================
 
-// Distancia entre los centros de los átomos.
-constexpr float ATOM_SPACING = 10.0f;
+// Distancia entre los centros de los átomos dentro de una fila.
+constexpr float ATOM_SPACING = 20.0f;
+
+// Distancia entre las filas de átomos.
+constexpr float ROW_SPACING = 25.0f;
 
 // Tamaño de la cuadrícula.
 constexpr float GRID_SIZE = 100.0f;
@@ -132,6 +135,10 @@ int main()
     // ATOMS
     // ========================================================
 
+    // --------------------------------------------------------
+    // Z = 1 - 10
+    // --------------------------------------------------------
+
     Chemistry::Atom hydrogen(
         1,
         0
@@ -183,9 +190,69 @@ int main()
     );
 
 
+    // --------------------------------------------------------
+    // Z = 11 - 20
+    // --------------------------------------------------------
+
+    Chemistry::Atom sodium(
+        11,
+        12
+    );
+
+    Chemistry::Atom magnesium(
+        12,
+        12
+    );
+
+    Chemistry::Atom aluminum(
+        13,
+        14
+    );
+
+    Chemistry::Atom silicon(
+        14,
+        14
+    );
+
+    Chemistry::Atom phosphorus(
+        15,
+        16
+    );
+
+    Chemistry::Atom sulfur(
+        16,
+        16
+    );
+
+    Chemistry::Atom chlorine(
+        17,
+        18
+    );
+
+    Chemistry::Atom argon(
+        18,
+        22
+    );
+
+    Chemistry::Atom potassium(
+        19,
+        20
+    );
+
+    Chemistry::Atom calcium(
+        20,
+        20
+    );
+
+
     // ========================================================
     // ATOM POSITIONS
     // ========================================================
+
+    // --------------------------------------------------------
+    // FIRST ROW
+    // Z = 1 - 10
+    // --------------------------------------------------------
 
     const glm::vec3 hydrogenPosition(
         -4.5f * ATOM_SPACING,
@@ -248,6 +315,72 @@ int main()
     );
 
 
+    // --------------------------------------------------------
+    // SECOND ROW
+    // Z = 11 - 20
+    // --------------------------------------------------------
+
+    const glm::vec3 sodiumPosition(
+        -4.5f * ATOM_SPACING,
+        0.0f,
+        -ROW_SPACING
+    );
+
+    const glm::vec3 magnesiumPosition(
+        -3.5f * ATOM_SPACING,
+        0.0f,
+        -ROW_SPACING
+    );
+
+    const glm::vec3 aluminumPosition(
+        -2.5f * ATOM_SPACING,
+        0.0f,
+        -ROW_SPACING
+    );
+
+    const glm::vec3 siliconPosition(
+        -1.5f * ATOM_SPACING,
+        0.0f,
+        -ROW_SPACING
+    );
+
+    const glm::vec3 phosphorusPosition(
+        -0.5f * ATOM_SPACING,
+        0.0f,
+        -ROW_SPACING
+    );
+
+    const glm::vec3 sulfurPosition(
+        0.5f * ATOM_SPACING,
+        0.0f,
+        -ROW_SPACING
+    );
+
+    const glm::vec3 chlorinePosition(
+        1.5f * ATOM_SPACING,
+        0.0f,
+        -ROW_SPACING
+    );
+
+    const glm::vec3 argonPosition(
+        2.5f * ATOM_SPACING,
+        0.0f,
+        -ROW_SPACING
+    );
+
+    const glm::vec3 potassiumPosition(
+        3.5f * ATOM_SPACING,
+        0.0f,
+        -ROW_SPACING
+    );
+
+    const glm::vec3 calciumPosition(
+        4.5f * ATOM_SPACING,
+        0.0f,
+        -ROW_SPACING
+    );
+
+
     // ========================================================
     // NUCLEUS RENDERER
     // ========================================================
@@ -258,6 +391,10 @@ int main()
     // ========================================================
     // ELECTRONIC RENDERERS
     // ========================================================
+
+    // --------------------------------------------------------
+    // Z = 1 - 10
+    // --------------------------------------------------------
 
     ElectronicRenderer hydrogenElectronicRenderer;
 
@@ -278,6 +415,31 @@ int main()
     ElectronicRenderer fluorineElectronicRenderer;
 
     ElectronicRenderer neonElectronicRenderer;
+
+
+    // --------------------------------------------------------
+    // Z = 11 - 20
+    // --------------------------------------------------------
+
+    ElectronicRenderer sodiumElectronicRenderer;
+
+    ElectronicRenderer magnesiumElectronicRenderer;
+
+    ElectronicRenderer aluminumElectronicRenderer;
+
+    ElectronicRenderer siliconElectronicRenderer;
+
+    ElectronicRenderer phosphorusElectronicRenderer;
+
+    ElectronicRenderer sulfurElectronicRenderer;
+
+    ElectronicRenderer chlorineElectronicRenderer;
+
+    ElectronicRenderer argonElectronicRenderer;
+
+    ElectronicRenderer potassiumElectronicRenderer;
+
+    ElectronicRenderer calciumElectronicRenderer;
 
 
     // ========================================================
@@ -553,6 +715,196 @@ int main()
         neonElectronicRenderer.render(
             neon.getElectronicStructure(),
             neonPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // SODIUM
+        // ====================================================
+
+        nucleusRenderer.render(
+            sodium.getNucleus(),
+            sodiumPosition,
+            camera,
+            window
+        );
+
+        sodiumElectronicRenderer.render(
+            sodium.getElectronicStructure(),
+            sodiumPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // MAGNESIUM
+        // ====================================================
+
+        nucleusRenderer.render(
+            magnesium.getNucleus(),
+            magnesiumPosition,
+            camera,
+            window
+        );
+
+        magnesiumElectronicRenderer.render(
+            magnesium.getElectronicStructure(),
+            magnesiumPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // ALUMINUM
+        // ====================================================
+
+        nucleusRenderer.render(
+            aluminum.getNucleus(),
+            aluminumPosition,
+            camera,
+            window
+        );
+
+        aluminumElectronicRenderer.render(
+            aluminum.getElectronicStructure(),
+            aluminumPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // SILICON
+        // ====================================================
+
+        nucleusRenderer.render(
+            silicon.getNucleus(),
+            siliconPosition,
+            camera,
+            window
+        );
+
+        siliconElectronicRenderer.render(
+            silicon.getElectronicStructure(),
+            siliconPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // PHOSPHORUS
+        // ====================================================
+
+        nucleusRenderer.render(
+            phosphorus.getNucleus(),
+            phosphorusPosition,
+            camera,
+            window
+        );
+
+        phosphorusElectronicRenderer.render(
+            phosphorus.getElectronicStructure(),
+            phosphorusPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // SULFUR
+        // ====================================================
+
+        nucleusRenderer.render(
+            sulfur.getNucleus(),
+            sulfurPosition,
+            camera,
+            window
+        );
+
+        sulfurElectronicRenderer.render(
+            sulfur.getElectronicStructure(),
+            sulfurPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // CHLORINE
+        // ====================================================
+
+        nucleusRenderer.render(
+            chlorine.getNucleus(),
+            chlorinePosition,
+            camera,
+            window
+        );
+
+        chlorineElectronicRenderer.render(
+            chlorine.getElectronicStructure(),
+            chlorinePosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // ARGON
+        // ====================================================
+
+        nucleusRenderer.render(
+            argon.getNucleus(),
+            argonPosition,
+            camera,
+            window
+        );
+
+        argonElectronicRenderer.render(
+            argon.getElectronicStructure(),
+            argonPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // POTASSIUM
+        // ====================================================
+
+        nucleusRenderer.render(
+            potassium.getNucleus(),
+            potassiumPosition,
+            camera,
+            window
+        );
+
+        potassiumElectronicRenderer.render(
+            potassium.getElectronicStructure(),
+            potassiumPosition,
+            camera,
+            window
+        );
+
+
+        // ====================================================
+        // CALCIUM
+        // ====================================================
+
+        nucleusRenderer.render(
+            calcium.getNucleus(),
+            calciumPosition,
+            camera,
+            window
+        );
+
+        calciumElectronicRenderer.render(
+            calcium.getElectronicStructure(),
+            calciumPosition,
             camera,
             window
         );
