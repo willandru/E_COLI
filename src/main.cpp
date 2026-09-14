@@ -16,25 +16,201 @@
 #include "NucleusRenderer.h"
 #include "ElectronicRenderer.h"
 
-#include <glm/glm.hpp>
+#include "OrbitalBuilder.h"
+#include "Orbital.h"
 
+#include "EffectivePotential.h"
+
+#include "WaveFunctionS.h"
+#include "WaveFunctionP.h"
+
+#include "ElectronDensity.h"
+#include "OrbitalGeometry.h"
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <cmath>
 #include <iostream>
+#include <memory>
+#include <vector>
+#include <utility>
 
 
 // ============================================================
 // SCENE CONFIGURATION
 // ============================================================
 
-// Distancia entre los centros de los átomos dentro de una fila.
-constexpr float ATOM_SPACING = 20.0f;
-
-// Distancia entre las filas de átomos.
-constexpr float ROW_SPACING = 25.0f;
-
-// Tamaño de la cuadrícula.
 constexpr float GRID_SIZE = 100.0f;
 
 constexpr int GRID_DIVISIONS = 100;
+
+
+// ============================================================
+// ATOMIC VISUAL SCALE
+// ============================================================
+
+constexpr float NUCLEON_RADIUS = 0.08f;
+
+constexpr double BOHR_RADIUS_NM =
+    0.0529177210903;
+
+constexpr float BOHR_RADIUS_VISUAL =
+    NUCLEON_RADIUS * 10.0f;
+
+constexpr float ATOMIC_SCALE =
+    BOHR_RADIUS_VISUAL /
+    static_cast<float>(BOHR_RADIUS_NM);
+
+
+// ============================================================
+// ORBITAL CONFIGURATION
+// ============================================================
+
+constexpr double ORBITAL_RADIUS_NM = 0.5;
+
+constexpr int ORBITAL_GRID_SIZE = 64;
+
+
+// Relative density threshold.
+//
+// 0.02 = render points with density >= 2%
+// of the maximum density of the orbital.
+//
+
+constexpr double ORBITAL_DENSITY_THRESHOLD_FACTOR =
+    0.02;
+
+
+// ============================================================
+// ATOM VISUAL REPRESENTATION
+// ============================================================
+
+struct AtomOrbitalGeometry
+{
+    std::vector<glm::vec3> positions;
+
+    // Normalized electron density.
+    std::vector<float> values;
+
+    // Signed wave function psi.
+    //
+    // Used by the renderer to determine
+    // the phase/color of the orbital.
+    //
+    std::vector<float> waveFunctionValues;
+
+    Quantum::Orbital orbital;
+};
+
+
+// ============================================================
+// ELECTRON COUNT BY PRINCIPAL LEVEL
+// ============================================================
+
+int countElectronsInPrincipalLevel(
+    const std::vector<Quantum::Orbital>& orbitals,
+    int principalQuantumNumber)
+{
+    int electronCount = 0;
+
+
+    for (const Quantum::Orbital& orbital : orbitals)
+    {
+        if (
+            orbital.getPrincipalQuantumNumber()
+            ==
+            principalQuantumNumber
+        )
+        {
+            electronCount +=
+                orbital.getElectronCount();
+        }
+    }
+
+
+    return electronCount;
+}
+
+
+// ============================================================
+// SLATER SCREENING
+// ============================================================
+//
+// Current model:
+//
+// n = 1:
+//     sigma = 0.30 * (N1 - 1)
+//
+// n = 2:
+//     sigma = 0.85 * N1
+//           + 0.35 * (N2 - 1)
+//
+// Phenomenological approximation.
+// Not Hartree-Fock or DFT.
+//
+
+double calculateSlaterScreening(
+    const std::vector<Quantum::Orbital>& orbitals,
+    const Quantum::Orbital& orbital)
+{
+    const int n =
+        orbital.getPrincipalQuantumNumber();
+
+
+    const int electronsN1 =
+        countElectronsInPrincipalLevel(
+            orbitals,
+            1
+        );
+
+
+    const int electronsN2 =
+        countElectronsInPrincipalLevel(
+            orbitals,
+            2
+        );
+
+
+    // --------------------------------------------------------
+    // 1s
+    // --------------------------------------------------------
+
+    if (n == 1)
+    {
+        return
+            0.30 *
+            static_cast<double>(
+                electronsN1 - 1
+            );
+    }
+
+
+    // --------------------------------------------------------
+    // n = 2
+    // --------------------------------------------------------
+
+    if (n == 2)
+    {
+        return
+            0.85 *
+            static_cast<double>(
+                electronsN1
+            )
+            +
+            0.35 *
+            static_cast<double>(
+                electronsN2 - 1
+            );
+    }
+
+
+    // --------------------------------------------------------
+    // Higher levels
+    // --------------------------------------------------------
+
+    return 0.0;
+}
 
 
 // ============================================================
@@ -74,8 +250,8 @@ int main()
     Camera camera(
         glm::vec3(
             0.0f,
-            3.0f,
-            40.0f
+            2.0f,
+            85.0f
         )
     );
 
@@ -135,250 +311,40 @@ int main()
     // ATOMS
     // ========================================================
 
-    // --------------------------------------------------------
-    // Z = 1 - 10
-    // --------------------------------------------------------
+    /*
+     * First six elements of the periodic table:
+     *
+     *     H   Z = 1
+     *     He  Z = 2
+     *     Li  Z = 3
+     *     Be  Z = 4
+     *     B   Z = 5
+     *     C   Z = 6
+     */
 
-    Chemistry::Atom hydrogen(
-        1,
-        0
-    );
+    std::vector<Chemistry::Atom> atoms;
 
-    Chemistry::Atom helium(
-        2,
-        2
-    );
-
-    Chemistry::Atom lithium(
-        3,
-        4
-    );
-
-    Chemistry::Atom beryllium(
-        4,
-        5
-    );
-
-    Chemistry::Atom boron(
-        5,
-        6
-    );
-
-    Chemistry::Atom carbon(
-        6,
-        6
-    );
-
-    Chemistry::Atom nitrogen(
-        7,
-        7
-    );
-
-    Chemistry::Atom oxygen(
-        8,
-        8
-    );
-
-    Chemistry::Atom fluorine(
-        9,
-        10
-    );
-
-    Chemistry::Atom neon(
-        10,
-        10
-    );
-
-
-    // --------------------------------------------------------
-    // Z = 11 - 20
-    // --------------------------------------------------------
-
-    Chemistry::Atom sodium(
-        11,
-        12
-    );
-
-    Chemistry::Atom magnesium(
-        12,
-        12
-    );
-
-    Chemistry::Atom aluminum(
-        13,
-        14
-    );
-
-    Chemistry::Atom silicon(
-        14,
-        14
-    );
-
-    Chemistry::Atom phosphorus(
-        15,
-        16
-    );
-
-    Chemistry::Atom sulfur(
-        16,
-        16
-    );
-
-    Chemistry::Atom chlorine(
-        17,
-        18
-    );
-
-    Chemistry::Atom argon(
-        18,
-        22
-    );
-
-    Chemistry::Atom potassium(
-        19,
-        20
-    );
-
-    Chemistry::Atom calcium(
-        20,
-        20
-    );
+    atoms.emplace_back(1, 0);
+    atoms.emplace_back(2, 2);
+    atoms.emplace_back(3, 4);
+    atoms.emplace_back(4, 5);
+    atoms.emplace_back(5, 6);
+    atoms.emplace_back(6, 6);
 
 
     // ========================================================
     // ATOM POSITIONS
     // ========================================================
 
-    // --------------------------------------------------------
-    // FIRST ROW
-    // Z = 1 - 10
-    // --------------------------------------------------------
-
-    const glm::vec3 hydrogenPosition(
-        -4.5f * ATOM_SPACING,
-        0.0f,
-        0.0f
-    );
-
-    const glm::vec3 heliumPosition(
-        -3.5f * ATOM_SPACING,
-        0.0f,
-        0.0f
-    );
-
-    const glm::vec3 lithiumPosition(
-        -2.5f * ATOM_SPACING,
-        0.0f,
-        0.0f
-    );
-
-    const glm::vec3 berylliumPosition(
-        -1.5f * ATOM_SPACING,
-        0.0f,
-        0.0f
-    );
-
-    const glm::vec3 boronPosition(
-        -0.5f * ATOM_SPACING,
-        0.0f,
-        0.0f
-    );
-
-    const glm::vec3 carbonPosition(
-        0.5f * ATOM_SPACING,
-        0.0f,
-        0.0f
-    );
-
-    const glm::vec3 nitrogenPosition(
-        1.5f * ATOM_SPACING,
-        0.0f,
-        0.0f
-    );
-
-    const glm::vec3 oxygenPosition(
-        2.5f * ATOM_SPACING,
-        0.0f,
-        0.0f
-    );
-
-    const glm::vec3 fluorinePosition(
-        3.5f * ATOM_SPACING,
-        0.0f,
-        0.0f
-    );
-
-    const glm::vec3 neonPosition(
-        4.5f * ATOM_SPACING,
-        0.0f,
-        0.0f
-    );
-
-
-    // --------------------------------------------------------
-    // SECOND ROW
-    // Z = 11 - 20
-    // --------------------------------------------------------
-
-    const glm::vec3 sodiumPosition(
-        -4.5f * ATOM_SPACING,
-        0.0f,
-        -ROW_SPACING
-    );
-
-    const glm::vec3 magnesiumPosition(
-        -3.5f * ATOM_SPACING,
-        0.0f,
-        -ROW_SPACING
-    );
-
-    const glm::vec3 aluminumPosition(
-        -2.5f * ATOM_SPACING,
-        0.0f,
-        -ROW_SPACING
-    );
-
-    const glm::vec3 siliconPosition(
-        -1.5f * ATOM_SPACING,
-        0.0f,
-        -ROW_SPACING
-    );
-
-    const glm::vec3 phosphorusPosition(
-        -0.5f * ATOM_SPACING,
-        0.0f,
-        -ROW_SPACING
-    );
-
-    const glm::vec3 sulfurPosition(
-        0.5f * ATOM_SPACING,
-        0.0f,
-        -ROW_SPACING
-    );
-
-    const glm::vec3 chlorinePosition(
-        1.5f * ATOM_SPACING,
-        0.0f,
-        -ROW_SPACING
-    );
-
-    const glm::vec3 argonPosition(
-        2.5f * ATOM_SPACING,
-        0.0f,
-        -ROW_SPACING
-    );
-
-    const glm::vec3 potassiumPosition(
-        3.5f * ATOM_SPACING,
-        0.0f,
-        -ROW_SPACING
-    );
-
-    const glm::vec3 calciumPosition(
-        4.5f * ATOM_SPACING,
-        0.0f,
-        -ROW_SPACING
-    );
+    std::vector<glm::vec3> atomPositions =
+    {
+        glm::vec3(-45.0f, 0.0f, 0.0f),
+        glm::vec3(-27.0f, 0.0f, 0.0f),
+        glm::vec3( -9.0f, 0.0f, 0.0f),
+        glm::vec3(  9.0f, 0.0f, 0.0f),
+        glm::vec3( 27.0f, 0.0f, 0.0f),
+        glm::vec3( 45.0f, 0.0f, 0.0f)
+    };
 
 
     // ========================================================
@@ -389,57 +355,406 @@ int main()
 
 
     // ========================================================
-    // ELECTRONIC RENDERERS
+    // ELECTRONIC RENDERER
     // ========================================================
 
-    // --------------------------------------------------------
-    // Z = 1 - 10
-    // --------------------------------------------------------
+    ElectronicRenderer electronicRenderer;
 
-    ElectronicRenderer hydrogenElectronicRenderer;
+    electronicRenderer.initialize();
 
-    ElectronicRenderer heliumElectronicRenderer;
-
-    ElectronicRenderer lithiumElectronicRenderer;
-
-    ElectronicRenderer berylliumElectronicRenderer;
-
-    ElectronicRenderer boronElectronicRenderer;
-
-    ElectronicRenderer carbonElectronicRenderer;
-
-    ElectronicRenderer nitrogenElectronicRenderer;
-
-    ElectronicRenderer oxygenElectronicRenderer;
-
-    ElectronicRenderer fluorineElectronicRenderer;
-
-    ElectronicRenderer neonElectronicRenderer;
+    electronicRenderer.setPointSize(
+        4.0f
+    );
 
 
-    // --------------------------------------------------------
-    // Z = 11 - 20
-    // --------------------------------------------------------
+    // ========================================================
+    // BUILD ALL ORBITAL GEOMETRY
+    // ========================================================
 
-    ElectronicRenderer sodiumElectronicRenderer;
+    std::vector<
+        std::vector<AtomOrbitalGeometry>
+    >
+        atomOrbitalGeometry;
 
-    ElectronicRenderer magnesiumElectronicRenderer;
 
-    ElectronicRenderer aluminumElectronicRenderer;
+    atomOrbitalGeometry.resize(
+        atoms.size()
+    );
 
-    ElectronicRenderer siliconElectronicRenderer;
 
-    ElectronicRenderer phosphorusElectronicRenderer;
+    for (
+        std::size_t atomIndex = 0;
+        atomIndex < atoms.size();
+        ++atomIndex
+    )
+    {
+        const Chemistry::Atom& atom =
+            atoms[atomIndex];
 
-    ElectronicRenderer sulfurElectronicRenderer;
 
-    ElectronicRenderer chlorineElectronicRenderer;
+        // ====================================================
+        // ELECTRONIC STRUCTURE
+        // ====================================================
 
-    ElectronicRenderer argonElectronicRenderer;
+        const auto orbitals =
+            Quantum::OrbitalBuilder::build(
+                atom.getElectronicStructure()
+            );
 
-    ElectronicRenderer potassiumElectronicRenderer;
 
-    ElectronicRenderer calciumElectronicRenderer;
+        const int atomicNumber =
+            atom.getNucleus().getProtonCount();
+
+
+        std::cout
+            << "\n========================================\n";
+
+
+        std::cout
+            << "ATOM Z = "
+            << atomicNumber
+            << "\n";
+
+
+        std::cout
+            << "Orbitales ocupados: "
+            << orbitals.size()
+            << "\n";
+
+
+        // ====================================================
+        // EACH OCCUPIED ORBITAL
+        // ====================================================
+
+        for (
+            const Quantum::Orbital& orbital :
+            orbitals
+        )
+        {
+            // =================================================
+            // SLATER SCREENING
+            // =================================================
+
+            const double screeningConstant =
+                calculateSlaterScreening(
+                    orbitals,
+                    orbital
+                );
+
+
+            // =================================================
+            // EFFECTIVE NUCLEAR POTENTIAL
+            // =================================================
+
+            Quantum::EffectivePotential
+                effectivePotential(
+                    atomicNumber
+                );
+
+
+            effectivePotential.setScreeningConstant(
+                screeningConstant
+            );
+
+
+            const double effectiveNuclearCharge =
+                effectivePotential
+                    .getEffectiveNuclearCharge();
+
+
+            // =================================================
+            // CONSOLE INFORMATION
+            // =================================================
+
+            std::cout
+                << "  "
+                << orbital.getPrincipalQuantumNumber()
+                << orbital.getType()
+                << "  m="
+                << orbital.getMagneticQuantumNumber()
+                << "  e="
+                << orbital.getElectronCount()
+                << "  sigma="
+                << screeningConstant
+                << "  Zeff="
+                << effectiveNuclearCharge
+                << "\n";
+
+
+            // =================================================
+            // ELECTRON DENSITY
+            // =================================================
+
+            Quantum::ElectronDensity
+                electronDensity;
+
+
+            electronDensity.setMaximumRadius(
+                ORBITAL_RADIUS_NM
+            );
+
+
+            electronDensity.setGridSize(
+                ORBITAL_GRID_SIZE
+            );
+
+
+            // =================================================
+            // S ORBITAL
+            // =================================================
+
+            if (
+                orbital.getAngularQuantumNumber() == 0
+            )
+            {
+                auto waveFunction =
+                    std::make_shared<
+                        Quantum::WaveFunctionS
+                    >(
+                        orbital.getPrincipalQuantumNumber(),
+                        effectiveNuclearCharge
+                    );
+
+
+                electronDensity.setWaveFunction(
+                    [waveFunction](
+                        double radiusNm,
+                        double theta,
+                        double phi)
+                    {
+                        constexpr double PI =
+                            3.14159265358979323846;
+
+
+                        (void)theta;
+                        (void)phi;
+
+
+                        const double radial =
+                            waveFunction->evaluateRadial(
+                                radiusNm
+                            );
+
+
+                        return
+                            radial
+                            /
+                            std::sqrt(
+                                4.0 * PI
+                            );
+                    }
+                );
+            }
+
+
+            // =================================================
+            // P ORBITAL
+            // =================================================
+
+            else if (
+                orbital.getAngularQuantumNumber() == 1
+            )
+            {
+                auto waveFunction =
+                    std::make_shared<
+                        Quantum::WaveFunctionP
+                    >(
+                        orbital.getPrincipalQuantumNumber(),
+                        orbital.getMagneticQuantumNumber(),
+                        effectiveNuclearCharge
+                    );
+
+
+                electronDensity.setWaveFunction(
+                    [waveFunction](
+                        double radiusNm,
+                        double theta,
+                        double phi)
+                    {
+                        return
+                            waveFunction->evaluate(
+                                radiusNm,
+                                theta,
+                                phi
+                            );
+                    }
+                );
+            }
+
+
+            // =================================================
+            // OTHER ORBITALS
+            // =================================================
+
+            else
+            {
+                std::cerr
+                    << "Orbital "
+                    << orbital.getType()
+                    << " no implementado todavía.\n";
+
+                continue;
+            }
+
+
+            // =================================================
+            // CALCULATE DENSITY
+            // =================================================
+
+            electronDensity.calculate();
+
+
+            if (!electronDensity.hasResult())
+            {
+                std::cerr
+                    << "Error calculando densidad.\n";
+
+                return -1;
+            }
+
+
+            // =================================================
+            // ORBITAL GEOMETRY
+            // =================================================
+
+            Geometry::OrbitalGeometry
+                geometry;
+
+
+            geometry.setDensity(
+                electronDensity.getDensity()
+            );
+
+
+            // ------------------------------------------------
+            // IMPORTANT:
+            //
+            // Preserve the original signed wave function.
+            // ------------------------------------------------
+
+            geometry.setWaveFunctionValues(
+                electronDensity
+                    .getWaveFunctionValues()
+            );
+
+
+            geometry.setCoordinates(
+                electronDensity.getCoordinates()
+            );
+
+
+            geometry.setGridSize(
+                electronDensity.getGridSize()
+            );
+
+
+            geometry.setVoxelSize(
+                electronDensity.getVoxelSize()
+            );
+
+
+            // =================================================
+            // RELATIVE DENSITY THRESHOLD
+            // =================================================
+
+            const double densityThreshold =
+                electronDensity.getMaximumDensity()
+                *
+                ORBITAL_DENSITY_THRESHOLD_FACTOR;
+
+
+            geometry.setDensityThreshold(
+                densityThreshold
+            );
+
+
+            // =================================================
+            // GENERATE GEOMETRY
+            // =================================================
+
+            geometry.generate();
+
+
+            if (!geometry.hasGeometry())
+            {
+                std::cerr
+                    << "Error generando geometría orbital.\n";
+
+                return -1;
+            }
+
+
+            // =================================================
+            // STORE RESULT
+            // =================================================
+
+            AtomOrbitalGeometry result;
+
+
+            result.positions =
+                geometry.getPositions();
+
+
+            result.values.clear();
+
+            result.values.reserve(
+                geometry.getValues().size()
+            );
+
+
+            // ------------------------------------------------
+            // Normalize density
+            //
+            // Density = |psi|²
+            // ------------------------------------------------
+
+            const double maximumDensity =
+                electronDensity.getMaximumDensity();
+
+
+            if (maximumDensity > 0.0)
+            {
+                for (
+                    float value :
+                    geometry.getValues()
+                )
+                {
+                    result.values.push_back(
+                        static_cast<float>(
+                            static_cast<double>(value)
+                            /
+                            maximumDensity
+                        )
+                    );
+                }
+            }
+
+
+            // ------------------------------------------------
+            // Signed wave function
+            //
+            // psi > 0 -> positive phase
+            // psi < 0 -> negative phase
+            // ------------------------------------------------
+
+            result.waveFunctionValues =
+                geometry.getWaveFunctionValues();
+
+
+            result.orbital =
+                orbital;
+
+
+            atomOrbitalGeometry[atomIndex]
+                .push_back(
+                    std::move(result)
+                );
+        }
+    }
+
+
+    std::cout
+        << "\n========================================\n\n";
 
 
     // ========================================================
@@ -470,6 +785,7 @@ int main()
         // ====================================================
 
         timer.update();
+
 
         const float deltaTime =
             timer.getDeltaTime();
@@ -515,7 +831,6 @@ int main()
 
         performance.beginRender();
 
-
         window.clear();
 
 
@@ -531,383 +846,147 @@ int main()
 
 
         // ====================================================
-        // HYDROGEN
+        // CAMERA MATRICES
         // ====================================================
 
-        nucleusRenderer.render(
-            hydrogen.getNucleus(),
-            hydrogenPosition,
-            camera,
-            window
-        );
+        const glm::mat4 view =
+            camera.getViewMatrix();
 
-        hydrogenElectronicRenderer.render(
-            hydrogen.getElectronicStructure(),
-            hydrogenPosition,
-            camera,
-            window
-        );
+
+        const glm::mat4 projection =
+            camera.getProjectionMatrix(
+                window.getAspectRatio()
+            );
 
 
         // ====================================================
-        // HELIUM
+        // RENDER ALL ATOMS
         // ====================================================
 
-        nucleusRenderer.render(
-            helium.getNucleus(),
-            heliumPosition,
-            camera,
-            window
-        );
-
-        heliumElectronicRenderer.render(
-            helium.getElectronicStructure(),
-            heliumPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // LITHIUM
-        // ====================================================
-
-        nucleusRenderer.render(
-            lithium.getNucleus(),
-            lithiumPosition,
-            camera,
-            window
-        );
-
-        lithiumElectronicRenderer.render(
-            lithium.getElectronicStructure(),
-            lithiumPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // BERYLLIUM
-        // ====================================================
-
-        nucleusRenderer.render(
-            beryllium.getNucleus(),
-            berylliumPosition,
-            camera,
-            window
-        );
-
-        berylliumElectronicRenderer.render(
-            beryllium.getElectronicStructure(),
-            berylliumPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // BORON
-        // ====================================================
-
-        nucleusRenderer.render(
-            boron.getNucleus(),
-            boronPosition,
-            camera,
-            window
-        );
-
-        boronElectronicRenderer.render(
-            boron.getElectronicStructure(),
-            boronPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // CARBON
-        // ====================================================
-
-        nucleusRenderer.render(
-            carbon.getNucleus(),
-            carbonPosition,
-            camera,
-            window
-        );
-
-        carbonElectronicRenderer.render(
-            carbon.getElectronicStructure(),
-            carbonPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // NITROGEN
-        // ====================================================
-
-        nucleusRenderer.render(
-            nitrogen.getNucleus(),
-            nitrogenPosition,
-            camera,
-            window
-        );
-
-        nitrogenElectronicRenderer.render(
-            nitrogen.getElectronicStructure(),
-            nitrogenPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // OXYGEN
-        // ====================================================
-
-        nucleusRenderer.render(
-            oxygen.getNucleus(),
-            oxygenPosition,
-            camera,
-            window
-        );
-
-        oxygenElectronicRenderer.render(
-            oxygen.getElectronicStructure(),
-            oxygenPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // FLUORINE
-        // ====================================================
-
-        nucleusRenderer.render(
-            fluorine.getNucleus(),
-            fluorinePosition,
-            camera,
-            window
-        );
-
-        fluorineElectronicRenderer.render(
-            fluorine.getElectronicStructure(),
-            fluorinePosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // NEON
-        // ====================================================
-
-        nucleusRenderer.render(
-            neon.getNucleus(),
-            neonPosition,
-            camera,
-            window
-        );
-
-        neonElectronicRenderer.render(
-            neon.getElectronicStructure(),
-            neonPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // SODIUM
-        // ====================================================
-
-        nucleusRenderer.render(
-            sodium.getNucleus(),
-            sodiumPosition,
-            camera,
-            window
-        );
-
-        sodiumElectronicRenderer.render(
-            sodium.getElectronicStructure(),
-            sodiumPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // MAGNESIUM
-        // ====================================================
-
-        nucleusRenderer.render(
-            magnesium.getNucleus(),
-            magnesiumPosition,
-            camera,
-            window
-        );
-
-        magnesiumElectronicRenderer.render(
-            magnesium.getElectronicStructure(),
-            magnesiumPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // ALUMINUM
-        // ====================================================
-
-        nucleusRenderer.render(
-            aluminum.getNucleus(),
-            aluminumPosition,
-            camera,
-            window
-        );
-
-        aluminumElectronicRenderer.render(
-            aluminum.getElectronicStructure(),
-            aluminumPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // SILICON
-        // ====================================================
-
-        nucleusRenderer.render(
-            silicon.getNucleus(),
-            siliconPosition,
-            camera,
-            window
-        );
-
-        siliconElectronicRenderer.render(
-            silicon.getElectronicStructure(),
-            siliconPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // PHOSPHORUS
-        // ====================================================
-
-        nucleusRenderer.render(
-            phosphorus.getNucleus(),
-            phosphorusPosition,
-            camera,
-            window
-        );
-
-        phosphorusElectronicRenderer.render(
-            phosphorus.getElectronicStructure(),
-            phosphorusPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // SULFUR
-        // ====================================================
-
-        nucleusRenderer.render(
-            sulfur.getNucleus(),
-            sulfurPosition,
-            camera,
-            window
-        );
-
-        sulfurElectronicRenderer.render(
-            sulfur.getElectronicStructure(),
-            sulfurPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // CHLORINE
-        // ====================================================
-
-        nucleusRenderer.render(
-            chlorine.getNucleus(),
-            chlorinePosition,
-            camera,
-            window
-        );
-
-        chlorineElectronicRenderer.render(
-            chlorine.getElectronicStructure(),
-            chlorinePosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // ARGON
-        // ====================================================
-
-        nucleusRenderer.render(
-            argon.getNucleus(),
-            argonPosition,
-            camera,
-            window
-        );
-
-        argonElectronicRenderer.render(
-            argon.getElectronicStructure(),
-            argonPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // POTASSIUM
-        // ====================================================
-
-        nucleusRenderer.render(
-            potassium.getNucleus(),
-            potassiumPosition,
-            camera,
-            window
-        );
-
-        potassiumElectronicRenderer.render(
-            potassium.getElectronicStructure(),
-            potassiumPosition,
-            camera,
-            window
-        );
-
-
-        // ====================================================
-        // CALCIUM
-        // ====================================================
-
-        nucleusRenderer.render(
-            calcium.getNucleus(),
-            calciumPosition,
-            camera,
-            window
-        );
-
-        calciumElectronicRenderer.render(
-            calcium.getElectronicStructure(),
-            calciumPosition,
-            camera,
-            window
-        );
+        for (
+            std::size_t atomIndex = 0;
+            atomIndex < atoms.size();
+            ++atomIndex
+        )
+        {
+            const Chemistry::Atom& atom =
+                atoms[atomIndex];
+
+
+            const glm::vec3& atomPosition =
+                atomPositions[atomIndex];
+
+
+            // =================================================
+            // NUCLEUS
+            // =================================================
+
+            nucleusRenderer.render(
+                atom.getNucleus(),
+                atomPosition,
+                camera,
+                window
+            );
+
+
+            // =================================================
+            // ORBITALS
+            // =================================================
+
+            for (
+                const AtomOrbitalGeometry&
+                    orbitalGeometry :
+                atomOrbitalGeometry[atomIndex]
+            )
+            {
+                if (
+                    orbitalGeometry.positions.empty()
+                )
+                {
+                    continue;
+                }
+
+
+                // =============================================
+                // MODEL MATRIX
+                // =============================================
+
+                const glm::mat4 model =
+                    glm::translate(
+                        glm::mat4(1.0f),
+                        atomPosition
+                    )
+                    *
+                    glm::scale(
+                        glm::mat4(1.0f),
+                        glm::vec3(
+                            ATOMIC_SCALE,
+                            ATOMIC_SCALE,
+                            ATOMIC_SCALE
+                        )
+                    );
+
+
+                // =============================================
+                // MATRICES
+                // =============================================
+
+                electronicRenderer.setModelMatrix(
+                    model
+                );
+
+
+                electronicRenderer.setViewMatrix(
+                    view
+                );
+
+
+                electronicRenderer.setProjectionMatrix(
+                    projection
+                );
+
+
+                // =============================================
+                // POSITIONS
+                // =============================================
+
+                electronicRenderer.setPositions(
+                    orbitalGeometry.positions
+                );
+
+
+                // =============================================
+                // DENSITY
+                // =============================================
+
+                electronicRenderer.setValues(
+                    orbitalGeometry.values
+                );
+
+
+                // =============================================
+                // WAVE FUNCTION
+                // =============================================
+                //
+                // This is what allows the shader to distinguish
+                // positive and negative phase.
+                //
+                // Positive psi -> positiveColor
+                // Negative psi -> negativeColor
+                //
+
+                electronicRenderer.setWaveFunctionValues(
+                    orbitalGeometry.waveFunctionValues
+                );
+
+
+                // =============================================
+                // RENDER
+                // =============================================
+
+                electronicRenderer.render();
+            }
+        }
 
 
         // ====================================================

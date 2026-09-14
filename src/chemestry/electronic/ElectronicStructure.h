@@ -1,99 +1,256 @@
 #pragma once
 
-#include "Nucleus.h"
-
 #include <string>
 #include <vector>
 
 namespace Chemistry
 {
+    // ============================================================
+    // ORBITAL ELECTRÓNICO
+    // ============================================================
+    //
+    // Representa un orbital individual dentro de un subnivel.
+    //
+    // Ejemplo:
+    //
+    //     p -> l = 1
+    //
+    //     m = -1
+    //     m =  0
+    //     m = +1
+    //
+    // Cada orbital puede contener como máximo 2 electrones.
+    //
+    // ============================================================
 
-// ============================================================
-// ORBITAL
-// ============================================================
-//
-// Un subnivel contiene varios orbitales:
-//
-// s -> 1 orbital
-// p -> 3 orbitales
-// d -> 5 orbitales
-// f -> 7 orbitales
-//
-// m = número cuántico magnético.
-// Para una representación espacial:
-//   p: -1, 0, +1
-//   d: -2 ... +2
-//   f: -3 ... +3
-//
-// electronCount indica cuántos electrones ocupan
-// ese orbital.
-//
-
-struct Orbital
-{
-    int m;
-    int electronCount;
-};
+    struct ElectronicOrbital
+    {
+        int magneticQuantumNumber = 0;
+        int electronCount = 0;
+    };
 
 
-// ============================================================
-// SUBLEVEL
-// ============================================================
+    // ============================================================
+    // SUBNIVEL ELECTRÓNICO
+    // ============================================================
+    //
+    // Representa un subnivel s, p, d o f.
+    //
+    // l = 0 -> s
+    // l = 1 -> p
+    // l = 2 -> d
+    // l = 3 -> f
+    //
+    // ============================================================
 
-struct Sublevel
-{
-    int n;
-    int l;
-    int electronCount;
+    struct ElectronicSublevel
+    {
+        int principalQuantumNumber = 0;
+        int angularQuantumNumber = 0;
 
-    std::vector<Orbital> orbitals;
-};
+        char type = 's';
 
+        int electronCount = 0;
 
-// ============================================================
-// ENERGY LEVEL
-// ============================================================
-
-struct EnergyLevel
-{
-    int n;
-
-    std::vector<Sublevel> sublevels;
-};
+        std::vector<ElectronicOrbital> orbitals;
+    };
 
 
-// ============================================================
-// ELECTRONIC STRUCTURE
-// ============================================================
+    // ============================================================
+    // NIVEL ELECTRÓNICO
+    // ============================================================
+    //
+    // Agrupa los subniveles que pertenecen al mismo número
+    // cuántico principal n.
+    //
+    // Ejemplo:
+    //
+    // n = 2
+    //
+    //     2s
+    //     2p
+    //
+    // ============================================================
 
-class ElectronicStructure
-{
-private:
+    struct ElectronicLevel
+    {
+        int principalQuantumNumber = 0;
 
-    int electronCount;
+        std::vector<ElectronicSublevel> sublevels;
+    };
 
-    std::vector<EnergyLevel> levels;
 
-    void build();
+    // ============================================================
+    // ESTRUCTURA ELECTRÓNICA
+    // ============================================================
+    //
+    // Esta clase describe la distribución electrónica de un átomo
+    // o ion.
+    //
+    // RESPONSABILIDAD:
+    //
+    //     Número atómico
+    //          ↓
+    //     carga del ion
+    //          ↓
+    //     número de electrones
+    //          ↓
+    //     distribución en subniveles y orbitales
+    //
+    // NO realiza:
+    //
+    //     - solución de Schrödinger
+    //     - funciones de onda
+    //     - densidad electrónica
+    //     - probabilidad radial
+    //     - potenciales
+    //     - geometría 3D
+    //     - renderizado
+    //
+    // ============================================================
 
-    void buildOrbitals(
-        Sublevel& sublevel
-    );
+    class ElectronicStructure
+    {
+    public:
 
-public:
+        // --------------------------------------------------------
+        // CONSTRUCTORES
+        // --------------------------------------------------------
 
-    ElectronicStructure();
+        ElectronicStructure();
 
-    explicit ElectronicStructure(
-        const Nucleus& nucleus
-    );
+        explicit ElectronicStructure(
+            int atomicNumber,
+            int ionCharge = 0
+        );
 
-    int getElectronCount() const;
 
-    const std::vector<EnergyLevel>&
-    getLevels() const;
+        // --------------------------------------------------------
+        // CONFIGURACIÓN
+        // --------------------------------------------------------
 
-    std::string getConfiguration() const;
-};
+        void setAtom(
+            int atomicNumber,
+            int ionCharge = 0
+        );
+
+        void calculate();
+
+
+        // --------------------------------------------------------
+        // INFORMACIÓN DEL ÁTOMO
+        // --------------------------------------------------------
+
+        int getAtomicNumber() const;
+
+        int getIonCharge() const;
+
+        int getElectronCount() const;
+
+
+        // --------------------------------------------------------
+        // ESTRUCTURA ELECTRÓNICA
+        // --------------------------------------------------------
+
+        const std::vector<ElectronicLevel>&
+        getLevels() const;
+
+        const std::vector<ElectronicSublevel>&
+        getSublevels() const;
+
+
+        // --------------------------------------------------------
+        // CONFIGURACIÓN ELECTRÓNICA
+        // --------------------------------------------------------
+        //
+        // Ejemplo:
+        //
+        //     1s2 2s2 2p4
+        //
+        // --------------------------------------------------------
+
+        std::string getConfiguration() const;
+
+
+        // --------------------------------------------------------
+        // UTILIDADES
+        // --------------------------------------------------------
+
+        static int orbitalCount(int angularQuantumNumber);
+
+        static int sublevelCapacity(int angularQuantumNumber);
+
+        static char sublevelType(int angularQuantumNumber);
+
+
+    private:
+
+        // --------------------------------------------------------
+        // PROPIEDADES DEL ÁTOMO
+        // --------------------------------------------------------
+
+        int atomicNumber = 0;
+
+        int ionCharge = 0;
+
+        int electronCount = 0;
+
+
+        // --------------------------------------------------------
+        // RESULTADO DE LA ESTRUCTURA ELECTRÓNICA
+        // --------------------------------------------------------
+
+        std::vector<ElectronicLevel> levels;
+
+        std::vector<ElectronicSublevel> sublevels;
+
+
+        // --------------------------------------------------------
+        // ORDEN DE LLENADO
+        // --------------------------------------------------------
+
+        struct FillingOrder
+        {
+            int n;
+            int l;
+        };
+
+        static const std::vector<FillingOrder> fillingOrder;
+
+
+        // --------------------------------------------------------
+        // CONSTRUCCIÓN INTERNA
+        // --------------------------------------------------------
+
+        void clear();
+
+        void buildStructure();
+
+        void buildLevels();
+
+        ElectronicSublevel createSublevel(
+            int n,
+            int l
+        ) const;
+
+        void distributeElectrons(
+            ElectronicSublevel& sublevel,
+            int electronCount
+        );
+
+
+        // --------------------------------------------------------
+        // VALIDACIÓN
+        // --------------------------------------------------------
+
+        static bool isValidAtomicNumber(
+            int atomicNumber
+        );
+
+        static bool isValidIonCharge(
+            int atomicNumber,
+            int ionCharge
+        );
+    };
 
 }

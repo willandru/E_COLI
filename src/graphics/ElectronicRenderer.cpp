@@ -1,10 +1,12 @@
 #include "ElectronicRenderer.h"
 
-#include "OrbitalGeometry.h"
+#include "Shader.h"
 
-#include <glm/gtc/matrix_transform.hpp>
+#include <glad/glad.h>
 
-#include <vector>
+#include <glm/gtc/type_ptr.hpp>
+
+#include <stdexcept>
 
 
 // ============================================================
@@ -12,16 +14,15 @@
 // ============================================================
 
 ElectronicRenderer::ElectronicRenderer()
-    : VAO(0),
-      VBO(0),
-      pointCount(0),
-      batches(),
-      shader(nullptr)
 {
-    shader = new Shader(
-        "../src/shaders/electronic.vert",
-        "../src/shaders/electronic.frag"
-    );
+    modelMatrix =
+        glm::mat4(1.0f);
+
+    viewMatrix =
+        glm::mat4(1.0f);
+
+    projectionMatrix =
+        glm::mat4(1.0f);
 }
 
 
@@ -31,412 +32,287 @@ ElectronicRenderer::ElectronicRenderer()
 
 ElectronicRenderer::~ElectronicRenderer()
 {
-    destroyGeometry();
+    destroyBuffers();
 
     delete shader;
+
+    shader = nullptr;
 }
 
 
 // ============================================================
-// LEVEL COLOR
+// INITIALIZATION
 // ============================================================
-//
-// El color depende del nivel principal n.
-//
-// Importante:
-//
-// Esto es solamente una codificación visual.
-// No significa que los orbitales tengan realmente
-// esos colores físicamente.
-//
 
-glm::vec3 ElectronicRenderer::getLevelColor(
-    int n
-) const
+void ElectronicRenderer::initialize()
 {
-    switch (n)
+    if (initialized)
     {
-        case 1:
-            return glm::vec3(
-                0.20f,
-                0.80f,
-                1.00f
-            );
-
-        case 2:
-            return glm::vec3(
-                0.30f,
-                1.00f,
-                0.45f
-            );
-
-        case 3:
-            return glm::vec3(
-                1.00f,
-                0.75f,
-                0.20f
-            );
-
-        case 4:
-            return glm::vec3(
-                1.00f,
-                0.35f,
-                0.25f
-            );
-
-        case 5:
-            return glm::vec3(
-                0.85f,
-                0.35f,
-                1.00f
-            );
-
-        case 6:
-            return glm::vec3(
-                1.00f,
-                0.35f,
-                0.70f
-            );
-
-        case 7:
-            return glm::vec3(
-                0.55f,
-                0.55f,
-                1.00f
-            );
-
-        default:
-            return glm::vec3(
-                1.00f,
-                1.00f,
-                1.00f
-            );
-    }
-}
-
-
-// ============================================================
-// CREATE GEOMETRY
-// ============================================================
-
-void ElectronicRenderer::createGeometry(
-    const Chemistry::ElectronicStructure&
-        electronicStructure
-)
-{
-    std::vector<glm::vec3> points;
-
-    batches.clear();
-
-
-    // ========================================================
-    // RECORRER NIVELES
-    // ========================================================
-
-    for (
-        const Chemistry::EnergyLevel& level :
-        electronicStructure.getLevels()
-    )
-    {
-        const int n =
-            level.n;
-
-
-        const glm::vec3 color =
-            getLevelColor(n);
-
-
-        // ====================================================
-        // RECORRER SUBNIVELES
-        // ====================================================
-
-        for (
-            const Chemistry::Sublevel& sublevel :
-            level.sublevels
-        )
-        {
-            const int l =
-                sublevel.l;
-
-
-            // =================================================
-            // SUBNIVEL S
-            // =================================================
-            //
-            // s tiene solamente un orbital.
-            //
-            // 1s
-            // 2s
-            // 3s
-            // ...
-
-            if (l == 0)
-            {
-                std::vector<glm::vec3> geometry =
-                    Chemistry::OrbitalGeometry::generate(
-                        n,
-                        l,
-                        1.0f,
-                        24
-                    );
-
-
-                if (!geometry.empty())
-                {
-                    const unsigned int first =
-                        static_cast<unsigned int>(
-                            points.size()
-                        );
-
-
-                    points.insert(
-                        points.end(),
-                        geometry.begin(),
-                        geometry.end()
-                    );
-
-
-                    const unsigned int count =
-                        static_cast<unsigned int>(
-                            geometry.size()
-                        );
-
-
-                    batches.push_back(
-                        {
-                            first,
-                            count,
-                            color
-                        }
-                    );
-                }
-            }
-
-
-            // =================================================
-            // SUBNIVEL P
-            // =================================================
-            //
-            // p contiene tres orbitales:
-            //
-            // px
-            // py
-            // pz
-            //
-            // El nuevo ElectronicStructure ya contiene
-            // esos tres orbitales mediante m:
-            //
-            // m = -1
-            // m =  0
-            // m = +1
-            //
-
-            else if (l == 1)
-            {
-                for (
-                    const Chemistry::Orbital& orbital :
-                    sublevel.orbitals
-                )
-                {
-                    if (orbital.electronCount <= 0)
-                        continue;
-
-
-                    int axis = 1;
-
-
-                    // ----------------------------------------
-                    // m = -1 -> px
-                    // m =  0 -> py
-                    // m = +1 -> pz
-                    // ----------------------------------------
-
-                    if (orbital.m == -1)
-                    {
-                        axis = 0;
-                    }
-                    else if (orbital.m == 0)
-                    {
-                        axis = 1;
-                    }
-                    else
-                    {
-                        axis = 2;
-                    }
-
-
-                    std::vector<glm::vec3> geometry =
-                        Chemistry::OrbitalGeometry::generateP(
-                            n,
-                            axis,
-                            1.0f,
-                            24
-                        );
-
-
-                    if (geometry.empty())
-                        continue;
-
-
-                    const unsigned int first =
-                        static_cast<unsigned int>(
-                            points.size()
-                        );
-
-
-                    points.insert(
-                        points.end(),
-                        geometry.begin(),
-                        geometry.end()
-                    );
-
-
-                    const unsigned int count =
-                        static_cast<unsigned int>(
-                            geometry.size()
-                        );
-
-
-                    batches.push_back(
-                        {
-                            first,
-                            count,
-                            color
-                        }
-                    );
-                }
-            }
-
-
-            // =================================================
-            // SUBNIVEL D
-            // =================================================
-            //
-            // Por ahora utilizamos la geometría d general.
-            //
-            // Posteriormente podremos separar los cinco
-            // orbitales d individuales.
-            //
-
-            else if (l == 2)
-            {
-                std::vector<glm::vec3> geometry =
-                    Chemistry::OrbitalGeometry::generate(
-                        n,
-                        l,
-                        1.0f,
-                        24
-                    );
-
-
-                if (!geometry.empty())
-                {
-                    const unsigned int first =
-                        static_cast<unsigned int>(
-                            points.size()
-                        );
-
-
-                    points.insert(
-                        points.end(),
-                        geometry.begin(),
-                        geometry.end()
-                    );
-
-
-                    const unsigned int count =
-                        static_cast<unsigned int>(
-                            geometry.size()
-                        );
-
-
-                    batches.push_back(
-                        {
-                            first,
-                            count,
-                            color
-                        }
-                    );
-                }
-            }
-
-
-            // =================================================
-            // SUBNIVEL F
-            // =================================================
-
-            else if (l == 3)
-            {
-                std::vector<glm::vec3> geometry =
-                    Chemistry::OrbitalGeometry::generate(
-                        n,
-                        l,
-                        1.0f,
-                        24
-                    );
-
-
-                if (!geometry.empty())
-                {
-                    const unsigned int first =
-                        static_cast<unsigned int>(
-                            points.size()
-                        );
-
-
-                    points.insert(
-                        points.end(),
-                        geometry.begin(),
-                        geometry.end()
-                    );
-
-
-                    const unsigned int count =
-                        static_cast<unsigned int>(
-                            geometry.size()
-                        );
-
-
-                    batches.push_back(
-                        {
-                            first,
-                            count,
-                            color
-                        }
-                    );
-                }
-            }
-        }
-    }
-
-
-    // ========================================================
-    // NO GEOMETRY
-    // ========================================================
-
-    if (points.empty())
         return;
+    }
 
 
-    pointCount =
-        static_cast<unsigned int>(
-            points.size()
+    /*
+     * The shader is intentionally kept inside the renderer.
+     *
+     * Rendering logic belongs here.
+     * Quantum mechanics does not.
+     */
+
+    shader =
+        new Shader(
+            "../src/shaders/electronic.vert",
+            "../src/shaders/electronic.frag"
         );
 
 
-    // ========================================================
-    // VAO
-    // ========================================================
+    createBuffers();
 
+
+    initialized = true;
+}
+
+
+// ============================================================
+// GEOMETRY
+// ============================================================
+
+void ElectronicRenderer::setPositions(
+    const std::vector<glm::vec3>& newPositions)
+{
+    positions = newPositions;
+
+
+    if (initialized)
+    {
+        uploadGeometry();
+    }
+}
+
+
+void ElectronicRenderer::setValues(
+    const std::vector<float>& newValues)
+{
+    values = newValues;
+
+
+    if (initialized)
+    {
+        uploadGeometry();
+    }
+}
+
+
+void ElectronicRenderer::setWaveFunctionValues(
+    const std::vector<float>& newWaveFunctionValues)
+{
+    waveFunctionValues =
+        newWaveFunctionValues;
+
+
+    if (initialized)
+    {
+        uploadGeometry();
+    }
+}
+
+
+// ============================================================
+// TRANSFORMATION
+// ============================================================
+
+void ElectronicRenderer::setModelMatrix(
+    const glm::mat4& model)
+{
+    modelMatrix = model;
+}
+
+
+void ElectronicRenderer::setViewMatrix(
+    const glm::mat4& view)
+{
+    viewMatrix = view;
+}
+
+
+void ElectronicRenderer::setProjectionMatrix(
+    const glm::mat4& projection)
+{
+    projectionMatrix = projection;
+}
+
+
+// ============================================================
+// APPEARANCE
+// ============================================================
+
+void ElectronicRenderer::setPointSize(
+    float newPointSize)
+{
+    if (newPointSize <= 0.0f)
+    {
+        throw std::invalid_argument(
+            "ElectronicRenderer: point size must be greater than zero."
+        );
+    }
+
+
+    pointSize = newPointSize;
+}
+
+
+void ElectronicRenderer::setPositiveColor(
+    const glm::vec3& color)
+{
+    positiveColor = color;
+}
+
+
+void ElectronicRenderer::setNegativeColor(
+    const glm::vec3& color)
+{
+    negativeColor = color;
+}
+
+
+// ============================================================
+// RENDER
+// ============================================================
+
+void ElectronicRenderer::render()
+{
+    if (!initialized)
+    {
+        return;
+    }
+
+
+    if (positions.empty())
+    {
+        return;
+    }
+
+
+    /*
+     * All three data arrays must contain one value
+     * per rendered point.
+     */
+
+    if (values.size() != positions.size())
+    {
+        throw std::runtime_error(
+            "ElectronicRenderer: density values do not match "
+            "the number of positions."
+        );
+    }
+
+
+    if (waveFunctionValues.size() != positions.size())
+    {
+        throw std::runtime_error(
+            "ElectronicRenderer: wave function values do not "
+            "match the number of positions."
+        );
+    }
+
+
+    shader->bind();
+
+
+    shader->setMat4(
+        "model",
+        modelMatrix
+    );
+
+
+    shader->setMat4(
+        "view",
+        viewMatrix
+    );
+
+
+    shader->setMat4(
+        "projection",
+        projectionMatrix
+    );
+
+
+    shader->setFloat(
+        "pointSize",
+        pointSize
+    );
+
+
+    shader->setVec3(
+        "positiveColor",
+        positiveColor
+    );
+
+
+    shader->setVec3(
+        "negativeColor",
+        negativeColor
+    );
+
+
+    /*
+     * Point sprites require the vertex shader to control
+     * gl_PointSize.
+     */
+
+    glEnable(
+        GL_PROGRAM_POINT_SIZE
+    );
+
+
+    glBindVertexArray(VAO);
+
+
+    glDrawArrays(
+        GL_POINTS,
+        0,
+        static_cast<GLsizei>(
+            positions.size()
+        )
+    );
+
+
+    glBindVertexArray(0);
+
+
+    glDisable(
+        GL_PROGRAM_POINT_SIZE
+    );
+}
+
+
+// ============================================================
+// INFORMATION
+// ============================================================
+
+std::size_t ElectronicRenderer::getPointCount() const
+{
+    return positions.size();
+}
+
+
+bool ElectronicRenderer::isInitialized() const
+{
+    return initialized;
+}
+
+
+// ============================================================
+// OPENGL BUFFERS
+// ============================================================
+
+void ElectronicRenderer::createBuffers()
+{
     glGenVertexArrays(
         1,
         &VAO
     );
 
-
-    // ========================================================
-    // VBO
-    // ========================================================
 
     glGenBuffers(
         1,
@@ -444,10 +320,24 @@ void ElectronicRenderer::createGeometry(
     );
 
 
-    glBindVertexArray(
-        VAO
+    glGenBuffers(
+        1,
+        &densityVBO
     );
 
+
+    glGenBuffers(
+        1,
+        &waveFunctionVBO
+    );
+
+
+    glBindVertexArray(VAO);
+
+
+    // ========================================================
+    // POSITION BUFFER
+    // ========================================================
 
     glBindBuffer(
         GL_ARRAY_BUFFER,
@@ -457,20 +347,13 @@ void ElectronicRenderer::createGeometry(
 
     glBufferData(
         GL_ARRAY_BUFFER,
-        points.size() *
-            sizeof(glm::vec3),
-        points.data(),
-        GL_STATIC_DRAW
+        0,
+        nullptr,
+        GL_DYNAMIC_DRAW
     );
 
 
-    // ========================================================
-    // POSITION
-    // ========================================================
-
-    glEnableVertexAttribArray(
-        0
-    );
+    glEnableVertexAttribArray(0);
 
 
     glVertexAttribPointer(
@@ -479,26 +362,197 @@ void ElectronicRenderer::createGeometry(
         GL_FLOAT,
         GL_FALSE,
         sizeof(glm::vec3),
-        reinterpret_cast<void*>(0)
+        nullptr
     );
 
 
     // ========================================================
-    // UNBIND
+    // DENSITY BUFFER
     // ========================================================
 
-    glBindVertexArray(
+    glBindBuffer(
+        GL_ARRAY_BUFFER,
+        densityVBO
+    );
+
+
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        0,
+        nullptr,
+        GL_DYNAMIC_DRAW
+    );
+
+
+    glEnableVertexAttribArray(1);
+
+
+    glVertexAttribPointer(
+        1,
+        1,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(float),
+        nullptr
+    );
+
+
+    // ========================================================
+    // WAVE FUNCTION BUFFER
+    // ========================================================
+
+    glBindBuffer(
+        GL_ARRAY_BUFFER,
+        waveFunctionVBO
+    );
+
+
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        0,
+        nullptr,
+        GL_DYNAMIC_DRAW
+    );
+
+
+    glEnableVertexAttribArray(2);
+
+
+    glVertexAttribPointer(
+        2,
+        1,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(float),
+        nullptr
+    );
+
+
+    // ========================================================
+    // CLEANUP
+    // ========================================================
+
+    glBindBuffer(
+        GL_ARRAY_BUFFER,
+        0
+    );
+
+
+    glBindVertexArray(0);
+}
+
+
+// ============================================================
+// UPLOAD GEOMETRY
+// ============================================================
+
+void ElectronicRenderer::uploadGeometry()
+{
+    if (!initialized)
+    {
+        return;
+    }
+
+
+    // ========================================================
+    // POSITIONS
+    // ========================================================
+
+    glBindBuffer(
+        GL_ARRAY_BUFFER,
+        VBO
+    );
+
+
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        positions.size()
+            *
+            sizeof(glm::vec3),
+        positions.data(),
+        GL_DYNAMIC_DRAW
+    );
+
+
+    // ========================================================
+    // DENSITY
+    // ========================================================
+
+    glBindBuffer(
+        GL_ARRAY_BUFFER,
+        densityVBO
+    );
+
+
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        values.size()
+            *
+            sizeof(float),
+        values.data(),
+        GL_DYNAMIC_DRAW
+    );
+
+
+    // ========================================================
+    // WAVE FUNCTION
+    // ========================================================
+
+    glBindBuffer(
+        GL_ARRAY_BUFFER,
+        waveFunctionVBO
+    );
+
+
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        waveFunctionValues.size()
+            *
+            sizeof(float),
+        waveFunctionValues.data(),
+        GL_DYNAMIC_DRAW
+    );
+
+
+    // ========================================================
+    // CLEANUP
+    // ========================================================
+
+    glBindBuffer(
+        GL_ARRAY_BUFFER,
         0
     );
 }
 
 
 // ============================================================
-// DESTROY GEOMETRY
+// DESTROY BUFFERS
 // ============================================================
 
-void ElectronicRenderer::destroyGeometry()
+void ElectronicRenderer::destroyBuffers()
 {
+    if (waveFunctionVBO != 0)
+    {
+        glDeleteBuffers(
+            1,
+            &waveFunctionVBO
+        );
+
+        waveFunctionVBO = 0;
+    }
+
+
+    if (densityVBO != 0)
+    {
+        glDeleteBuffers(
+            1,
+            &densityVBO
+        );
+
+        densityVBO = 0;
+    }
+
+
     if (VBO != 0)
     {
         glDeleteBuffers(
@@ -519,165 +573,4 @@ void ElectronicRenderer::destroyGeometry()
 
         VAO = 0;
     }
-
-
-    pointCount = 0;
-
-    batches.clear();
-}
-
-
-// ============================================================
-// RENDER
-// ============================================================
-
-void ElectronicRenderer::render(
-    const Chemistry::ElectronicStructure&
-        electronicStructure,
-
-    const glm::vec3& position,
-
-    const Camera& camera,
-
-    const Window& window
-)
-{
-    if (shader == nullptr)
-        return;
-
-
-    // ========================================================
-    // CREAR GEOMETRÍA
-    // ========================================================
-
-    if (VAO == 0)
-    {
-        createGeometry(
-            electronicStructure
-        );
-    }
-
-
-    if (
-        VAO == 0 ||
-        pointCount == 0 ||
-        batches.empty()
-    )
-    {
-        return;
-    }
-
-
-    // ========================================================
-    // SHADER
-    // ========================================================
-
-    shader->bind();
-
-
-    // ========================================================
-    // CAMERA
-    // ========================================================
-
-    const glm::mat4 view =
-        camera.getViewMatrix();
-
-
-    const glm::mat4 projection =
-        camera.getProjectionMatrix(
-            window.getAspectRatio()
-        );
-
-
-    shader->setMat4(
-        "view",
-        view
-    );
-
-
-    shader->setMat4(
-        "projection",
-        projection
-    );
-
-
-    // ========================================================
-    // MODEL
-    // ========================================================
-
-    glm::mat4 model(
-        1.0f
-    );
-
-
-    model =
-        glm::translate(
-            model,
-            position
-        );
-
-
-    shader->setMat4(
-        "model",
-        model
-    );
-
-
-    // ========================================================
-    // POINT SIZE
-    // ========================================================
-
-    shader->setFloat(
-        "pointSize",
-        3.0f
-    );
-
-
-    // ========================================================
-    // DRAW
-    // ========================================================
-
-    glBindVertexArray(
-        VAO
-    );
-
-
-    for (
-        const DrawBatch& batch :
-        batches
-    )
-    {
-        // ----------------------------------------------------
-        // COLOR DEL NIVEL
-        // ----------------------------------------------------
-
-        shader->setVec3(
-            "particleColor",
-            batch.color
-        );
-
-
-        // ----------------------------------------------------
-        // DRAW ORBITAL
-        // ----------------------------------------------------
-
-        glDrawArrays(
-            GL_POINTS,
-            static_cast<GLint>(
-                batch.first
-            ),
-            static_cast<GLsizei>(
-                batch.count
-            )
-        );
-    }
-
-
-    // ========================================================
-    // UNBIND
-    // ========================================================
-
-    glBindVertexArray(
-        0
-    );
 }

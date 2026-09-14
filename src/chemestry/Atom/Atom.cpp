@@ -12,7 +12,8 @@ Atom::Atom()
 
     : nucleus(),
       electronicStructure(
-          nucleus
+          1,
+          0
       )
 
 {
@@ -37,7 +38,8 @@ Atom::Atom(
       ),
 
       electronicStructure(
-          nucleus
+          protonCount,
+          0
       )
 
 {

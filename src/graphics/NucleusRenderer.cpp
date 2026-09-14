@@ -338,7 +338,7 @@ void NucleusRenderer::render(
 
     glBindVertexArray(VAO);
 
-    constexpr float radius = 0.18f;
+    constexpr float radius = 0.08f;
 
 
     // ========================================================
